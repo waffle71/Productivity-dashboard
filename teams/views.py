@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction # Important for ensuring both save operations succeed
+from django.db.models import Q
 from .forms import TeamForm, TeamGoalForm
 from .models import TeamMember, Team
 from dashboard.models import Goal
@@ -59,8 +60,8 @@ def team_create_view(request):
                 
                 messages.success(request, f"Team '{team.team_name}' created successfully. You are the team admin!")
                 
-                # Redirect to the team's detail page (we will assume its URL name is 'team_detail')
-                return redirect('teams:team_detail', team_id=team.id)
+                # Redirect to the team's detail page (we will assume its URL name is 'team_dashboard')
+                return redirect('teams:team_dashboard', team_id=team.id)
 
             except Exception as e:
                 messages.error(request, f"Error creating team: {e}")
@@ -74,7 +75,7 @@ def team_create_view(request):
     
     context = {
         'form': form,
-        'page_title': 'Start a New Team'
+        'page_title': 'Create a New Team'
     }
     return render(request, 'teams/team_form.html', context)
 
@@ -243,3 +244,75 @@ def team_dashboard_view(request, team_id):
     }
     
     return render(request, 'teams/team_dashboard.html', context)
+
+@login_required
+def team_list_view(request):
+    """
+    Displays a list of all teams the user can join.
+    """
+    # # 1. Get IDs of all teams the user is currently a member of
+    # member_of_teams_ids = TeamMember.objects.filter(
+    #     user=request.user
+    # ).values_list('team_id', flat=True)
+
+    # # 2. Fetch all teams that the user is NOT a member of
+    # joinable_teams = Team.objects.exclude(
+    #     id__in=member_of_teams_ids
+    # ).order_by('team_name')
+
+    # context = {
+    #     'page_title': 'Join an Existing Team',
+    #     'joinable_teams': joinable_teams
+    # }
+    # 1. Fetch all teams
+    all_teams = Team.objects.all().order_by('team_name')
+
+    # 2. Get a quick lookup of teams the user is already a member of
+    # This creates a set of team IDs for fast checking in the template/loop
+    member_of_team_ids = set(
+        TeamMember.objects.filter(user=request.user)
+        .values_list('team_id', flat=True)
+    )
+
+    # 3. Create a list combining team data with membership status
+    team_data = []
+    for team in all_teams:
+        is_member = team.id in member_of_team_ids
+        team_data.append({
+            'team': team,
+            'is_member': is_member
+        })
+
+    context = {
+        'page_title': 'Explore and Manage Teams',
+        'all_team_data': team_data, # Renamed variable for clarity
+    }
+    return render(request, 'teams/team_list.html', context)
+
+@login_required
+def team_join_view(request, team_id):
+    """
+    Creates a TeamMember record for the current user and the specified team.
+    """
+    team = get_object_or_404(Team, pk=team_id)
+
+    # Prevent joining a team twice (crucial integrity check)
+    if TeamMember.objects.filter(user=request.user, team=team).exists():
+        messages.warning(request, f"You are already a member of {team.team_name}.")
+        return redirect('teams:team_dashboard', team_id=team.id)
+
+    try:
+        # --- THIS IS THE CRITICAL STEP ---
+        TeamMember.objects.create(
+            user=request.user,
+            team=team,
+            role=TeamMember.Role.MEMBER # Automatically assign as a regular Member
+        )
+        # ---------------------------------
+        
+        messages.success(request, f"You have successfully joined the team: {team.team_name}!")
+        return redirect('teams:team_dashboard', team_id=team.id)
+
+    except Exception as e:
+        messages.error(request, f"Failed to join team: {e}")
+        return redirect('teams:team_list')

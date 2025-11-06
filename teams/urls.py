@@ -10,7 +10,7 @@ urlpatterns = [
     path('', views.team_list_view, name='team_list'), 
     
     # URL for creating a new team
-    path('new/', views.team_create_view, name='team_create'),
+    path('create/', views.team_create_view, name='team_create'),
     
     # URL for viewing a specific team's details
     path('<int:team_id>/', views.team_detail_view, name='team_detail'), 
@@ -26,5 +26,9 @@ urlpatterns = [
 
     path('team/<int:team_id>/', views.team_dashboard_view, name='team_dashboard'),
     path('team/<int:team_id>/goals/', views.team_member_tasks_view, name='team_member_tasks'), 
+    path('list/', views.team_list_view, name='team_list'),        # New: To show all joinable teams
+    path('join/<int:team_id>/', views.team_join_view, name='team_join'), # New: To process joining
+        
+    path('team/<int:team_id>/', views.team_dashboard_view, name='team_dashboard'),
 
 ]

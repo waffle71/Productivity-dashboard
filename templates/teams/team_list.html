@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>{{ page_title }}</h2>
+    <p>View all existing teams. If you are a member, you can jump to the dashboard; otherwise, you can join.</p>
+
+    <div class="team-list-container">
+        {% if all_team_data %}
+            {% for data in all_team_data %}
+                <div class="team-card" style="border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 5px;">
+                    <h3>{{ data.team.team_name }}</h3>
+                    <p>{{ data.team.desc|default:"No description provided." }}</p>
+                    
+                    {% if data.is_member %}
+                        {# If the user is already a member, show the dashboard link #}
+                        <a href="{% url 'teams:team_dashboard' team_id=data.team.id %}" 
+                           class="button button-secondary" style="background-color: green;">
+                            View Dashboard
+                        </a>
+                        <span style="color: green; font-weight: bold; margin-left: 10px;">(Already a Member)</span>
+                    {% else %}
+                        {# If the user is NOT a member, show the join link #}
+                        <a href="{% url 'teams:team_join' team_id=data.team.id %}" 
+                           class="button button-primary">
+                            Join Team
+                        </a>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No teams have been created on the platform yet.</p>
+        {% endif %}
+    </div>
+
+    <div style="margin-top: 20px;">
+        <a href="{% url 'dashboard:dashboard_view' %}" class="button-secondary">Back to Dashboard</a>
+    </div>
+{% endblock %}

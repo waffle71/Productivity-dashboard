@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import F
+from teams.models import TeamMember
 from .models import Goal, TimeLog
 from .forms import GoalForm, TimeLogForm
 from datetime import timedelta
@@ -48,6 +49,15 @@ def dashboard_view(request):
         'goals_with_progress': goals_with_progress,
         'completed_goals_count': Goal.objects.filter(user=request.user, completed=True).count(),
         # We can add motivational content here (Admin features)
+    }
+
+    user_teams_membership = TeamMember.objects.filter(
+        user=request.user
+    ).select_related('team') # Use select_related to fetch Team details efficiently
+
+    context = {
+        # ... (other context variables like goals_with_progress) ...
+        'user_teams': user_teams_membership,
     }
     
     return render(request, 'dashboard/dashboard.html', context)
