@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>{{ page_title }}</h2>
+    <p>Create a new team to share goals and challenges with others.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+            <div style="color: red;">
+                Please correct the errors below:
+                <ul>
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <li>{{ field|title }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        
+        {{ form.as_p }} 
+        
+        <button type="submit" class="button-primary">Create Team</button>
+        <a href="{% url 'teams:team_list' %}" class="button-secondary">Cancel</a>
+    </form>
+{% endblock %}

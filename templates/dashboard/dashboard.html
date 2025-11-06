@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="dashboard-header">
+        <h2>👋 Welcome, {{ user.username }}!</h2>
+        <p>You've completed {{ completed_goals_count }} goals so far. Let's keep going!</p>
+    </div>
+
+    <div class="actions-section">
+        <h3>Quick Actions</h3>
+        <a href="{% url 'dashboard:goal_create' %}" class="button">➕ Add New Goal</a>
+    </div>
+    
+    <hr>
+    <!-- {% if item.goal.id %}
+        <a href="{% url 'dashboard:time_log' goal_id=item.goal.id %}" class="button button-log">Log Time</a> 
+    {% else %}
+        <span style="color:red;">No Goal ID</span>
+    {% endif %} -->
+
+    <!-- <a href="#" class="button button-reflect">Reflect on Progress</a> -->
+    <div class="active-goals-section">
+        <h3>Your Active Goals</h3>
+        {% if goals_with_progress %}
+            {% for item in goals_with_progress %}
+            <div class="goal-card">
+                <h4>{{ item.goal.title }} (Importance: {{ item.goal.importance_level }}/5)</h4>
+                
+                <p>{{ item.goal.description|truncatechars:100 }}</p>
+
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: {{ item.progress_percentage }}%;">
+                        {{ item.progress_percentage }}%
+                    </div>
+                    
+                </div>
+                
+                <p>
+                    **Time Spent:** {{ item.goal.real_time|floatformat:1 }} / {{ item.goal.target_time|floatformat:1 }}<br>
+                    **Current Streak:** {{ item.current_streak }} days 
+                </p>
+                
+                <a href="{% url 'dashboard:time_log' goal_id=item.goal.id %}" class="button button-log">Log Time</a> 
+                <a href="javascript:void(0)" class="button button-reflect" data-goal-id="{{ item.goal.id }}">Reflect on Progress</a>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>You currently have no active goals. Click "Add New Goal" to start tracking your progress!</p>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <div id="reflectionModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+      <div class="modal-content" style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 600px; position: relative;">
+        <span class="close-button" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+        <div id="modalBody">
+            Loading reflection details...
+        </div>
+      </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('reflectionModal');
+            const modalBody = document.getElementById('modalBody');
+            const closeButton = document.querySelector('.close-button');
+
+            // Function to open the modal and load content
+            function openReflectionModal(goalId) {
+                const url = `{% url 'dashboard:goal_reflection_fragment' goal_id=0 %}`.replace('0', goalId);
+                
+                // Use the Fetch API to get the HTML fragment
+                fetch(url)
+                    .then(response => response.text())
+                    .then(html => {
+                        modalBody.innerHTML = html; // Insert the fetched HTML fragment
+                        modal.style.display = "block"; // Show the modal
+                    })
+                    .catch(error => {
+                        console.error('Error fetching reflection data:', error);
+                        modalBody.innerHTML = '<p style="color: red;">Could not load reflection data.</p>';
+                        modal.style.display = "block";
+                    });
+            }
+
+            // Bind the click event to all "Reflect on Progress" buttons
+            document.querySelectorAll('.button-reflect').forEach(button => {
+                // We use a custom data attribute to store the goal ID
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const goalId = this.getAttribute('data-goal-id');
+                    openReflectionModal(goalId);
+                });
+            });
+
+            // Close modal when 'x' is clicked
+            closeButton.onclick = function() {
+                modal.style.display = "none";
+            }
+
+            // Close modal when user clicks outside of it
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            }
+        });
+    </script>
+{% endblock %}

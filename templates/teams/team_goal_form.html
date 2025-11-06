@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Create Team Goal for: {{ team.team_name }}</h2>
+    <p>Define a shared goal for your team to work on.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+            <div style="color: red;">
+                Please correct the errors below:
+                <ul>
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <li>{{ field|title }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        
+        {{ form.as_p }} 
+        
+        <button type="submit" class="button-primary">Create Team Goal</button>
+        <a href="{% url 'teams:team_detail' team_id=team.id %}" class="button-secondary">Cancel</a>
+    </form>
+{% endblock %}

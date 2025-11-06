@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>{{ page_title }}</h2>
+    <p>Viewing **{{ total_user_count }}** regular users on the platform.</p>
+
+    <div class="user-list-container">
+        {% if all_users %}
+            <table class="user-table" border="1" style="width:100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background-color: #f2f2f2;">
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Date Joined</th>
+                        <th>Last Login</th>
+                        <th>Status/Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in all_users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.date_joined|date:"Y-m-d" }}</td>
+                        <td>{{ user.last_login|default:"N/A" }}</td>
+                        <td>
+                            <a href="#" style="margin-right: 10px;">Details</a> 
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No regular users found yet.</p>
+        {% endif %}
+    </div>
+{% endblock %}

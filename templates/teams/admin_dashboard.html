@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>{{ page_title }}</h2>
+    <p>Welcome to the administrative control panel. Here you can manage the platform and push motivational content.</p>
+
+    <div class="admin-summary">
+        <h3>Platform Overview</h3>
+        <p>Total Users: [DB Query Placeholder]</p>
+        <p>Active Goals: [DB Query Placeholder]</p>
+        <p>Teams Created: [DB Query Placeholder]</p>
+    </div>
+    
+    <hr>
+
+    <div class="admin-actions">
+        <h3>Admin Actions</h3>
+        {% for task in admin_tasks %}
+            <div class="action-item">
+                <h4>{{ task.name }}</h4>
+                <p>Use this action to manage...</p>
+                <a href="{% url task.url_name %}" class="button-action">{{ task.name }}</a>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

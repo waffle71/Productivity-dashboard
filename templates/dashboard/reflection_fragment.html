@@ -1,0 +1,27 @@
+<div class="reflection-modal-content">
+    <h3>Reflection for: {{ goal.title }}</h3>
+    <p><strong>Target:</strong> {{ goal.target_time|floatformat:1 }} | 
+        <strong>Logged:</strong> {{ goal.real_time|floatformat:1 }} | 
+        <strong>Progress:</strong> {{ progress_percentage }}%
+    </p>
+
+    <div style="background-color: #eee; height: 10px; border-radius: 5px; margin-bottom: 15px;">
+        <div style="width: {{ progress_percentage }}%; background-color: #4CAF50; height: 10px; border-radius: 5px;"></div>
+    </div>
+    
+    <h4>Time Log History</h4>
+    {% if time_logs %}
+        <ul style="list-style-type: none; padding: 0;">
+            {% for log in time_logs|slice:":5" %} <li style="border-bottom: 1px dashed #ddd; padding: 5px 0;">
+                **{{ log.minutes }} minutes** on {{ log.log_date|date:"Y-m-d" }}
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No time has been logged yet.</p>
+    {% endif %}
+
+    <div style="margin-top: 15px; color: #666;">
+        *Future feature: A space to write a personal journal entry.*
+    </div>
+</div>
