@@ -6,7 +6,7 @@ from datetime import timedelta
 class Team(models.Model):
     """
     Represents a team.
-    Based on the 'Teams' schema [cite: 60, 61]
+    Based on the 'Teams' schema 
     """
     team_name = models.CharField(max_length=255)
     desc = models.TextField(blank=True, null=True, help_text="Description")
@@ -25,7 +25,7 @@ class Team(models.Model):
 class TeamMember(models.Model):
     """
     Links a user to a team and defines their role within that team.
-    This is the 'Team_members' table [cite: 63, 64]
+    This is the 'Team_members' table 
     """
     class Role(models.TextChoices):
         MEMBER = 'MEMBER', 'Member'
@@ -45,7 +45,7 @@ class TeamMember(models.Model):
 class TeamGoal(models.Model):
     """
     Represents a goal associated with a specific team.
-    Based on the 'Team goals' schema [cite: 71, 72, 73]
+    Based on the 'Team goals' schema 
     """
     team = models.ForeignKey(
         Team, 
@@ -72,7 +72,7 @@ class TeamGoal(models.Model):
 class TeamTimeLog(models.Model):
     """
     Represents a single log of time spent by a user on a team goal.
-    Based on the 'team_Time_log' schema [cite: 75, 76]
+    Based on the 'team_Time_log' schema 
     """
     goal = models.ForeignKey(
         TeamGoal, 

@@ -7,7 +7,7 @@ from datetime import timedelta
 class Goal(models.Model):
     """
     Represents a user-created personal goal.
-    Based on the 'User created goals' schema [cite: 68]
+    Based on the 'User created goals' schema 
     """
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
@@ -19,7 +19,7 @@ class Goal(models.Model):
     start_date = models.DateField()
     end_date = models.DateField(blank=True, null=True)
     
-    # Time fields [cite: 68]
+    # Time fields 
     target_time = models.DurationField(
         help_text="Target time to spend (e.g., '10:00:00' for 10 hours)"
     )
@@ -30,10 +30,10 @@ class Goal(models.Model):
         
     completed = models.BooleanField(default=False)
     
-    # Stored as a string like '1111100' (Mon-Fri) [cite: 68]
+    # Stored as a string like '1111100' (Mon-Fri) 
     days_of_the_week = models.CharField(max_length=7, blank=True) 
     
-    # Importance level from 1-5 [cite: 68]
+    # Importance level from 1-5 
     importance_level = models.IntegerField(default=1) 
 
     def __str__(self):
@@ -42,7 +42,7 @@ class Goal(models.Model):
 class TimeLog(models.Model):
     """
     Represents a single log of time spent on a personal goal.
-    Based on the 'Time_log' schema [cite: 69, 70]
+    Based on the 'Time_log' schema 
     """
     goal = models.ForeignKey(
         Goal, 

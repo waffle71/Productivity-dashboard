@@ -5,7 +5,6 @@ from django.db import models
 class CustomUser(AbstractUser):
     """
     Extends the default User model to add roles.
-    Based on [cite: 13, 14, 59]
     """
     
     # User roles as defined in the proposal 
