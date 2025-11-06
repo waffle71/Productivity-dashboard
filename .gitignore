@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual Environment
+venv/
+env/
+
+# Django
+# Database file
+db.sqlite3
+
+# Static files collected
+/static_root/
+
+# Environment variables/secrets (highly recommended for production)
+.env
+
+# IDE files (VS Code)
+.vscode/
