@@ -23,4 +23,8 @@ urlpatterns = [
     
     # New path for User Management
     path('admin/users/', views.user_management_view, name='user_management'),
+
+    path('team/<int:team_id>/', views.team_dashboard_view, name='team_dashboard'),
+    path('team/<int:team_id>/goals/', views.team_member_tasks_view, name='team_member_tasks'), 
+
 ]

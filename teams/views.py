@@ -3,7 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction # Important for ensuring both save operations succeed
 from .forms import TeamForm, TeamGoalForm
-from .models import TeamMember
+from .models import TeamMember, Team
+from dashboard.models import Goal
 from users.decorators import admin_required
 from users.models import CustomUser
 
@@ -152,3 +153,93 @@ def user_management_view(request):
     }
     
     return render(request, 'teams/user_management.html', context)
+
+@login_required
+def team_member_tasks_view(request, team_id):
+    """
+    Displays active goals for all 'MEMBER's within a specific team.
+    Only accessible by 'ADMIN's of that team.
+    """
+    
+    # 1. Verify Team Existence
+    team = get_object_or_404(Team, pk=team_id)
+    
+    # 2. Authorization Check: Is the current user an ADMIN of this team?
+    try:
+        current_member_role = TeamMember.objects.get(
+            user=request.user, 
+            team=team
+        ).role
+        
+        # If the user is NOT a Team Admin, redirect or raise 403
+        if current_member_role != TeamMember.Role.ADMIN:
+            messages.error(request, "You must be an Admin of this team to view member tasks.")
+            return redirect('teams:team_dashboard', team_id=team_id) 
+
+    except TeamMember.DoesNotExist:
+        # If the user is not a member of the team at all
+        messages.error(request, "You are not a member of this team.")
+        return redirect('dashboard:dashboard_view') 
+    
+    # 3. Get Members and their Goals
+    # Find all users who are simple 'MEMBER's in this team
+    member_users = TeamMember.objects.filter(
+        team=team, 
+        role=TeamMember.Role.MEMBER
+    ).values_list('user_id', flat=True)
+    
+    # Fetch all active goals for those members
+    member_goals = Goal.objects.filter(
+        user_id__in=member_users,
+        completed=False 
+    ).select_related('user').order_by('user__username', 'end_date')
+    
+    context = {
+        'page_title': f'Active Tasks for Members of {team.team_name}',
+        'team': team,
+        'member_goals': member_goals,
+        'total_member_goals': member_goals.count()
+    }
+    
+    return render(request, 'teams/team_member_tasks.html', context)
+
+# In teams/views.py (Modify the existing team_dashboard_view)
+
+# Make sure you have TeamMember imported
+from .models import Team, TeamMember 
+
+@login_required
+def team_dashboard_view(request, team_id):
+    """
+    Displays the main dashboard for a specific team.
+    """
+    team = get_object_or_404(Team, pk=team_id)
+    
+    # --- START: Role Check Logic ---
+    current_user_role = TeamMember.Role.MEMBER # Default to Member
+    
+    try:
+        # Fetch the TeamMember object for the current user and team
+        member_instance = TeamMember.objects.get(
+            user=request.user, 
+            team=team
+        )
+        current_user_role = member_instance.role # Set the actual role (MEMBER or ADMIN)
+        
+    except TeamMember.DoesNotExist:
+        # Handle case where user is not a member of the team (optional: redirect or show error)
+        messages.error(request, "You are not an active member of this team.")
+        return redirect('dashboard:dashboard_view') 
+    # --- END: Role Check Logic ---
+
+    # Example: Fetch other team data here (members list, team goals, etc.)
+
+    context = {
+        'page_title': team.team_name,
+        'team': team,
+        # PASS THE ROLE TO THE TEMPLATE
+        'current_user_role': current_user_role, 
+        # Add other context variables (e.g., 'team_goals', 'members_list')
+    }
+    
+    return render(request, 'teams/team_dashboard.html', context)

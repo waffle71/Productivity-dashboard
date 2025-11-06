@@ -1,0 +1,14 @@
+{% comment %} 
+    You need to ensure the team_dashboard_view passes the current user's role 
+    (e.g., 'current_user_role') in the context. Assuming you do this: 
+{% endcomment %}
+
+{% if current_user_role == 'ADMIN' %}
+    <div class="team-admin-actions">
+        <h3>Team Admin Actions</h3>
+        <a href="{% url 'teams:team_member_tasks' team_id=team.id %}" class="button button-primary">
+            👥 View All Member Tasks
+        </a>
+        </div>
+    <hr>
+{% endif %}
