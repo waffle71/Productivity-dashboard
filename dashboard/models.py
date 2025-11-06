@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import timedelta
 
 # Create your models here.
@@ -34,7 +35,9 @@ class Goal(models.Model):
     days_of_the_week = models.CharField(max_length=7, blank=True) 
     
     # Importance level from 1-5 
-    importance_level = models.IntegerField(default=1) 
+    importance_level = models.PositiveSmallIntegerField(
+        default=1,
+        validators = [MinValueValidator(1), MaxValueValidator(5)]) 
 
     def __str__(self):
         return f"{self.title} ({self.user.username})"

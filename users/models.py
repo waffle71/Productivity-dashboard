@@ -14,6 +14,8 @@ class CustomUser(AbstractUser):
 
     # The 'role' field from the 'User accounts' table 
     role = models.CharField(max_length=50, choices=Role.choices, default=Role.USER)
-
+    email = models.EmailField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
     def __str__(self):
         return self.username

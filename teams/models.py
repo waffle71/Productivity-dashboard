@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from datetime import timedelta
 
 # Create your models here.
@@ -9,7 +10,7 @@ class Team(models.Model):
     Based on the 'Teams' schema 
     """
     team_name = models.CharField(max_length=255)
-    desc = models.TextField(blank=True, null=True, help_text="Description")
+    team_desc = models.TextField(blank=True, null=True, help_text="Description")
     
     # Creates a Many-to-Many relationship with CustomUser
     # through the TeamMember model
@@ -19,8 +20,10 @@ class Team(models.Model):
         related_name='teams'
     )
 
+    created_at = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
-        return self.team_name
+        return self.team_name 
 
 class TeamMember(models.Model):
     """
@@ -34,7 +37,7 @@ class TeamMember(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     role = models.CharField(max_length=50, choices=Role.choices, default=Role.MEMBER)
-
+    created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         # Ensures a user can only be on a team once
         unique_together = ('user', 'team')
@@ -65,7 +68,8 @@ class TeamGoal(models.Model):
         help_text="Actual time spent by the team"
     )
     completed = models.BooleanField(default=False)
-
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return f"Team Goal: {self.title} ({self.team.team_name})"
 
@@ -84,8 +88,13 @@ class TeamTimeLog(models.Model):
         on_delete=models.CASCADE, 
         related_name='team_time_logs'
     )
+    created_at = models.DateTimeField(auto_now_add=True)
     log_date = models.DateField(auto_now_add=True)
-    minutes = models.IntegerField(help_text="Time spent in minutes for this log")
+    notes = models.TextField(blank=True, null=True, help_text="Optional notes about this time log")
+    minutes = models.IntegerField(
+        validators=[MinValueValidator(1)],
+        help_text="Time spent in minutes for this log"
+    )
 
     def __str__(self):
         return f"{self.user.username} logged {self.minutes}m for {self.goal.title}"
