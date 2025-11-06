@@ -45,18 +45,20 @@ def dashboard_view(request):
             'current_streak': current_streak
         })
 
-    context = {
-        'goals_with_progress': goals_with_progress,
-        'completed_goals_count': Goal.objects.filter(user=request.user, completed=True).count(),
-        # We can add motivational content here (Admin features)
-    }
-
+    # context = {
+    #     'goals_with_progress': goals_with_progress,
+    #     'completed_goals_count': Goal.objects.filter(user=request.user, completed=True).count(),
+    #     # We can add motivational content here (Admin features)
+    # }
+    completed_goals_count = Goal.objects.filter(user=request.user, completed=True).count()
+    
     user_teams_membership = TeamMember.objects.filter(
         user=request.user
     ).select_related('team') # Use select_related to fetch Team details efficiently
 
     context = {
-        # ... (other context variables like goals_with_progress) ...
+        'goals_with_progress': goals_with_progress,
+        'completed_goals_count': completed_goals_count,
         'user_teams': user_teams_membership,
     }
     
@@ -177,3 +179,49 @@ def goal_reflection_fragment_view(request, goal_id): # Renamed function
     
     # Render only the fragment template
     return render(request, 'dashboard/reflection_fragment.html', context)
+
+@login_required
+def goal_delete_view(request, goal_id):
+    """
+    Handles deletion of a Goal. Checks for ownership/admin status before deleting.
+    """
+    goal = get_object_or_404(Goal, pk=goal_id)
+
+    # --- Authorization Check ---
+    is_authorized = False
+    
+    # Check 1: Is the current user the Goal owner? (Applies to all goals)
+    if goal.user == request.user:
+        is_authorized = True
+
+    # Check 2: Is this a Team Goal, and is the user a Team Admin?
+    if hasattr(goal, 'teamgoal') and goal.teamgoal.team:
+        try:
+            member_role = TeamMember.objects.get(
+                user=request.user, 
+                team=goal.teamgoal.team
+            ).role
+            if member_role == TeamMember.Role.ADMIN:
+                is_authorized = True
+        except TeamMember.DoesNotExist:
+            # User is not a member of the team, so they can't be admin.
+            pass
+
+    if not is_authorized:
+        messages.error(request, "You do not have permission to delete this goal.")
+        return redirect('dashboard:dashboard_view')
+    # ---------------------------
+
+    if request.method == 'POST':
+        # Deleting a Goal automatically deletes associated TimeLogs (due to CASCADE)
+        goal_title = goal.title
+        goal.delete()
+        messages.success(request, f"Goal '{goal_title}' has been successfully deleted.")
+        return redirect('dashboard:dashboard_view')
+
+    # If GET request, show confirmation page (optional, but good practice)
+    context = {
+        'goal': goal,
+        'page_title': f'Confirm Deletion: {goal.title}'
+    }
+    return render(request, 'dashboard/goal_confirm_delete.html', context)

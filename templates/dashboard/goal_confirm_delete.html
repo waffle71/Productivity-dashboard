@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>{{ page_title }}</h2>
+    <p style="color: red; font-weight: bold;">
+        WARNING: Are you absolutely sure you want to delete the goal "{{ goal.title }}"? 
+        All associated time logs will also be permanently deleted.
+    </p>
+    
+    <p>This action cannot be undone.</p>
+
+    <form method="post" action="{% url 'dashboard:goal_delete' goal_id=goal.id %}">
+        {% csrf_token %}
+        
+        <button type="submit" class="button button-danger" style="margin-right: 15px;">
+            Yes, Permanently Delete
+        </button>
+        <a href="{% url 'dashboard:dashboard_view' %}" class="button-secondary">
+            No, Keep the Goal
+        </a>
+    </form>
+{% endblock %}
