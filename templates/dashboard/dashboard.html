@@ -40,11 +40,12 @@
                     **Current Streak:** {{ item.current_streak }} days 
                 </p>
                 
-                <a href="{% url 'dashboard:time_log' goal_id=item.goal.id %}" class="button button-log">Log Time</a> 
+                <a href="{% url 'dashboard:time_log' goal_id=item.goal.id %}" class="button button-log">Log Time</a>
+                <a href="{% url 'dashboard:goal_edit' goal_id=item.goal.id %}" class="button">Edit Goal</a>
                 <a href="javascript:void(0)" class="button button-reflect" data-goal-id="{{ item.goal.id }}">Reflect on Progress</a>
-                
-                <a href="{% url 'dashboard:goal_delete' goal_id=item.goal.id %}" 
-                   class="button button-danger" 
+
+                <a href="{% url 'dashboard:goal_delete' goal_id=item.goal.id %}"
+                   class="button button-danger"
                    onclick="return confirm('Are you sure you want to delete the goal: {{ item.goal.title }}? This action cannot be undone.')"
                    style="background-color: #dc3545; color: white;">
                     Delete Goal
