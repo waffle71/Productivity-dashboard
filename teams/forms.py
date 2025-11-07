@@ -10,10 +10,10 @@ class TeamForm(forms.ModelForm):
     """
     class Meta:
         model = Team
-        fields = ('team_name', 'desc')
+        fields = ('team_name', 'team_desc')
         labels = {
             'team_name': 'Team Name',
-            'desc': 'Description (Optional)',
+            'team_desc': 'Description (Optional)',
         }
 
 class TeamGoalForm(forms.ModelForm):

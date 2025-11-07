@@ -74,27 +74,58 @@ def goal_create_view(request):
         if form.is_valid():
             # 1. Save the goal instance, but don't commit to the database yet
             goal = form.save(commit=False)
-            
+
             # 2. Assign the logged-in user to the goal
             goal.user = request.user
-            
+
             # 3. Save the instance to the database
             goal.save()
+            form.save_m2m()
             
             messages.success(request, f"Goal '{goal.title}' created successfully!")
             # Redirect back to the main dashboard
             return redirect('dashboard:dashboard_view')
         else:
             # If form is invalid, messages will be handled in the template
-            pass 
+            pass
     else:
         # GET request: show a blank form
         form = GoalForm()
-    
+
     context = {
         'form': form,
-        'page_title': 'Create a New Goal'
+        'page_title': 'Create a New Goal',
+        'is_edit': False,
     }
+    return render(request, 'dashboard/goal_form.html', context)
+
+
+@login_required
+def goal_update_view(request, goal_id):
+    """Allow users to edit an existing personal goal."""
+
+    goal = get_object_or_404(Goal, pk=goal_id, user=request.user)
+
+    if request.method == 'POST':
+        form = GoalForm(request.POST, instance=goal)
+        if form.is_valid():
+            updated_goal = form.save(commit=False)
+            # Ensure ownership stays with the logged-in user
+            updated_goal.user = request.user
+            updated_goal.save()
+            form.save_m2m()
+
+            messages.success(request, f"Goal '{updated_goal.title}' updated successfully!")
+            return redirect('dashboard:dashboard_view')
+    else:
+        form = GoalForm(instance=goal)
+
+    context = {
+        'form': form,
+        'page_title': f"Edit Goal: {goal.title}",
+        'is_edit': True,
+    }
+
     return render(request, 'dashboard/goal_form.html', context)
 
 @login_required

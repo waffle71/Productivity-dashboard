@@ -2,7 +2,13 @@
 
 {% block content %}
     <h2>{{ page_title }}</h2>
-    <p>Define the parameters for your new productivity goal.</p>
+    <p>
+        {% if is_edit %}
+            Update the details of your goal and adjust your targets as needed.
+        {% else %}
+            Define the parameters for your new productivity goal.
+        {% endif %}
+    </p>
 
     <form method="post">
         {% csrf_token %}
@@ -20,9 +26,11 @@
             </div>
         {% endif %}
         
-        {{ form.as_p }} 
-        
-        <button type="submit" class="button-primary">Save Goal</button>
+        {{ form.as_p }}
+
+        <button type="submit" class="button-primary">
+            {% if is_edit %}Update Goal{% else %}Save Goal{% endif %}
+        </button>
         <a href="{% url 'dashboard:dashboard_view' %}" class="button-secondary">Cancel</a>
     </form>
 {% endblock %}
