@@ -87,17 +87,20 @@ class GoalForm(forms.ModelForm):
     
 class TimeLogForm(forms.ModelForm):
     """
-    A simple form for users to log time spent in minutes on a specific goal.
+    Form for logging time spent on a goal.
     """
     class Meta:
         model = TimeLog
-        # Only prompt for the number of minutes
-        fields = ('minutes',) 
-        
-        widgets = {
-            'minutes': forms.NumberInput(attrs={
-                'min': 1, 
-                'placeholder': 'Minutes spent',
-                'required': True
-            }),
+        fields = ('minutes',)
+        labels = {
+            'minutes': 'Time Spent (in minutes)',
         }
+        widgets = {
+            'minutes': forms.NumberInput(attrs={'min': 1, 'placeholder': 'Enter minutes logged'})
+        }
+
+    def clean_minutes(self):
+        minutes = self.cleaned_data.get('minutes')
+        if minutes is not None and minutes <= 0:
+            raise forms.ValidationError("Time logged must be at least 1 minute.")
+        return minutes

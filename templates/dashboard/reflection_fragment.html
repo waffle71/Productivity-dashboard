@@ -12,11 +12,11 @@
     <h4>Time Log History</h4>
     {% if time_logs %}
         <ul style="list-style-type: none; padding: 0;">
-            {% for log in time_logs|slice:":5" %}
+            {% for log in time_logs %}
                 <li style="border-bottom: 1px dashed #ddd; padding: 5px 0;">
                     <strong>{{ log.minutes }} minutes</strong> on {{ log.log_date|date:"Y-m-d" }}
                     <div style="margin-top: 4px;">
-                        <a href="{% url 'dashboard:time_log_edit' goal.id log.id %}" style="margin-right: 10px;">Edit</a>
+                        <a href="{% url 'dashboard:time_log_edit' log_id=log.id %}" style="margin-right: 10px;">Edit</a>
                         <a href="{% url 'dashboard:time_log_delete' goal.id log.id %}">Delete</a>
                     </div>
                 </li>

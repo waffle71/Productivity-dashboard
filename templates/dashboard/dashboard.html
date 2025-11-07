@@ -2,7 +2,7 @@
 
 {% block content %}
     <div class="dashboard-header">
-        <h2>👋 Welcome, {{ user.username }}!</h2>
+        <h2> Welcome, {{ user.username }}!</h2>
         <p>You've completed {{ completed_goals_count }} goals so far. Let's keep going!</p>
     </div>
 
@@ -40,17 +40,20 @@
                     **Current Streak:** {{ item.current_streak }} days 
                 </p>
                 
-                <a href="{% url 'dashboard:time_log' goal_id=item.goal.id %}" class="button button-log">Log Time</a>
-                <a href="{% url 'dashboard:goal_edit' goal_id=item.goal.id %}" class="button">Edit Goal</a>
+                <a href="{% url 'dashboard:time_log' goal_id=item.goal.id %}" class="button button-log">Log Time</a> 
                 <a href="javascript:void(0)" class="button button-reflect" data-goal-id="{{ item.goal.id }}">Reflect on Progress</a>
 
-                <a href="{% url 'dashboard:goal_delete' goal_id=item.goal.id %}"
-                   class="button button-danger"
-                   onclick="return confirm('Are you sure you want to delete the goal: {{ item.goal.title }}? This action cannot be undone.')"
-                   style="background-color: #dc3545; color: white;">
-                    Delete Goal
+                <a href="{% url 'dashboard:goal_edit' goal_id=item.goal.id %}" 
+                class="button button-secondary">
+                    Edit Goal
                 </a>
                 
+                <a href="{% url 'dashboard:goal_delete' goal_id=item.goal.id %}" 
+                class="button button-danger" 
+                onclick="return confirm('Are you sure you want to delete the goal: {{ item.goal.title }}? This action cannot be undone.')"
+                style="background-color: #dc3545; color: white;">
+                    Delete Goal
+                </a>
             </div>
 
             {% endfor %}
