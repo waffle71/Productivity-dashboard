@@ -1,104 +1,165 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<style>
+    /* Basic custom styles for better readability and structure */
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f7f7f9;
+    }
+    .goal-card, .teams-section {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .goal-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    /* Button styles (using Tailwind for core structure, but defining namespaced colors) */
+    .button {
+        @apply inline-flex items-center justify-center px-4 py-2 font-semibold rounded-lg transition duration-150 ease-in-out text-center shadow-md;
+    }
+    .button-primary {
+        @apply bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50;
+    }
+    .button-secondary {
+        @apply bg-gray-200 text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-4 focus:ring-gray-400 focus:ring-opacity-50;
+    }
+    .button-log {
+        @apply bg-green-500 text-white hover:bg-green-600 focus:outline-none focus:ring-4 focus:ring-green-400 focus:ring-opacity-50;
+    }
+    .button-reflect {
+        @apply bg-indigo-500 text-white hover:bg-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-400 focus:ring-opacity-50;
+    }
+    .button-danger {
+        @apply bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-    <div class="dashboard-header">
-        <h2> Welcome, {{ user.username }}!</h2>
-        <p>You've completed {{ completed_goals_count }} goals so far. Let's keep going!</p>
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    
+    <div class="dashboard-header mb-8 p-6 bg-white rounded-xl shadow-lg">
+        <h2 class="text-3xl font-extrabold text-gray-900">👋 Welcome, {{ user.username }}!</h2>
+        <p class="mt-2 text-xl text-gray-600">You've completed <span class="font-bold text-indigo-600">{{ completed_goals_count }}</span> goals so far. Let's keep going!</p>
     </div>
 
-    <div class="actions-section">
-        <h3>Quick Actions</h3>
-        <a href="{% url 'dashboard:goal_create' %}" class="button">➕ Add New Goal</a>
+    <div class="actions-section mb-8 p-4 bg-white rounded-xl shadow">
+        <h3 class="text-xl font-semibold mb-3 text-gray-800">Quick Actions</h3>
+        <div class="flex flex-wrap gap-3">
+            <a href="{% url 'dashboard:goal_create' %}" class="button button-primary">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Add New Goal
+            </a>
+            <a href="{% url 'teams:team_create' %}" class="button button-secondary">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20v-2c0-.656-.126-1.283-.356-1.857M17 20v-2c0-.656-.126-1.283-.356-1.857M10 12l2-1m-2 1l-2-1m-2 1h-2a2 2 0 00-2 2v2a2 2 0 002 2h6m-4-6h4m-4 0v2m2-2h-2m2 0v2m2-2h-2m2 0v2m2-2h-2m2 0v2"></path></svg>
+                Create New Team
+            </a>
+            <a href="{% url 'teams:team_list' %}" class="button button-secondary">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8"></path></svg>
+                Join Team
+            </a>
+        </div>
     </div>
     
-    <hr>
-    <!-- {% if item.goal.id %}
-        <a href="{% url 'dashboard:time_log' goal_id=item.goal.id %}" class="button button-log">Log Time</a> 
-    {% else %}
-        <span style="color:red;">No Goal ID</span>
-    {% endif %} -->
-
-    <!-- <a href="#" class="button button-reflect">Reflect on Progress</a> -->
-    <div class="active-goals-section">
-        <h3>Your Active Goals</h3>
+    <div class="active-goals-section mb-8">
+        <h3 class="text-2xl font-bold mb-4 text-gray-800">Your Active Goals</h3>
         {% if goals_with_progress %}
-            {% for item in goals_with_progress %}
-            <div class="goal-card">
-                <h4>{{ item.goal.title }} (Importance: {{ item.goal.importance_level }}/5)</h4>
-                
-                <p>{{ item.goal.description|truncatechars:100 }}</p>
-
-                <div class="progress-bar-container">
-                    <div class="progress-bar" style="width: {{ item.progress_percentage }}%;">
-                        {{ item.progress_percentage }}%
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for item in goals_with_progress %}
+                <div class="goal-card bg-white p-6 rounded-xl border border-gray-200 shadow-md">
+                    <div class="flex justify-between items-start mb-3">
+                        <h4 class="text-xl font-semibold text-gray-900">{{ item.goal.title }}</h4>
+                        <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                            ⭐ {{ item.goal.importance_level }}/5
+                        </span>
                     </div>
                     
+                    <p class="text-sm text-gray-500 mb-4 h-12 overflow-hidden">{{ item.goal.description|truncatechars:80 }}</p>
+
+                    <div class="progress-bar-container w-full bg-gray-200 rounded-full h-3 mb-2">
+                        <div class="progress-bar h-3 rounded-full bg-indigo-600" style="width: {{ item.progress_percentage }}%;"></div>
+                    </div>
+                    <p class="text-xs font-medium text-indigo-700 mb-4">{{ item.progress_percentage }}% Complete</p>
+                    
+                    <div class="grid grid-cols-2 gap-3 mb-4 text-sm text-gray-700">
+                        <div class="p-2 bg-gray-50 rounded-lg">
+                            <span class="block font-bold">{{ item.goal.real_time|floatformat:1 }} / {{ item.goal.target_time|floatformat:1 }}</span>
+                            <span class="block text-xs text-gray-500">Time Logged (hrs)</span>
+                        </div>
+                        <div class="p-2 bg-gray-50 rounded-lg">
+                            <span class="block font-bold text-green-600">{{ item.current_streak }} days</span>
+                            <span class="block text-xs text-gray-500">Current Streak</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
+                        <a href="{% url 'dashboard:time_log' goal_id=item.goal.id %}" class="button button-log flex-1">Log Time</a> 
+                        
+                        <a href="javascript:void(0)" class="button button-reflect flex-1" data-goal-id="{{ item.goal.id }}">
+                            Reflect
+                        </a>
+
+                        <a href="{% url 'dashboard:goal_edit' goal_id=item.goal.id %}" 
+                        class="button button-secondary px-3 py-1.5 text-sm">
+                            Edit
+                        </a>
+                        
+                        <a href="{% url 'dashboard:goal_delete' goal_id=item.goal.id %}" 
+                        class="button button-danger px-3 py-1.5 text-sm" 
+                        onclick="return confirm('Are you sure you want to delete {{ item.goal.title }}? This action cannot be undone.')">
+                            Delete
+                        </a>
+                    </div>
                 </div>
-                
-                <p>
-                    **Time Spent:** {{ item.goal.real_time|floatformat:1 }} / {{ item.goal.target_time|floatformat:1 }}<br>
-                    **Current Streak:** {{ item.current_streak }} days 
-                </p>
-                
-                <a href="{% url 'dashboard:time_log' goal_id=item.goal.id %}" class="button button-log">Log Time</a> 
-                <a href="javascript:void(0)" class="button button-reflect" data-goal-id="{{ item.goal.id }}">Reflect on Progress</a>
-
-                <a href="{% url 'dashboard:goal_edit' goal_id=item.goal.id %}" 
-                class="button button-secondary">
-                    Edit Goal
-                </a>
-                
-                <a href="{% url 'dashboard:goal_delete' goal_id=item.goal.id %}" 
-                class="button button-danger" 
-                onclick="return confirm('Are you sure you want to delete the goal: {{ item.goal.title }}? This action cannot be undone.')"
-                style="background-color: #dc3545; color: white;">
-                    Delete Goal
-                </a>
+                {% endfor %}
             </div>
-
-            {% endfor %}
         {% else %}
-            <p>You currently have no active goals. Click "Add New Goal" to start tracking your progress!</p>
+            <div class="p-8 text-center bg-white rounded-xl shadow border border-gray-200">
+                <p class="text-lg text-gray-500">You currently have no active goals.</p>
+                <a href="{% url 'dashboard:goal_create' %}" class="mt-4 button button-primary">Start Your First Goal!</a>
+            </div>
         {% endif %}
     </div>
 
-    <div class="dashboard-header">
-        <h2> Welcome, {{ user.username }}!</h2>
-        </div>
+    <hr class="my-8 border-gray-300">
 
     <div class="teams-section">
-        <h3>Your Teams</h3>
+        <h3 class="text-2xl font-bold mb-4 text-gray-800">Your Teams</h3>
         {% if user_teams %}
-            <ul class="team-list">
+            <ul class="space-y-3 p-4 bg-white rounded-xl shadow border border-gray-200">
             {% for membership in user_teams %}
-                <li>
-                    <a href="{% url 'teams:team_dashboard' team_id=membership.team.id %}">
+                <li class="flex justify-between items-center border-b pb-3 last:border-b-0">
+                    <a href="{% url 'teams:team_dashboard' team_id=membership.team.id %}" class="text-lg font-medium text-indigo-600 hover:text-indigo-800">
                         {{ membership.team.team_name }}
                     </a>
-                    (Your Role: <strong>{{ membership.get_role_display }}</strong>)
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
+                        Role: {{ membership.get_role_display }}
+                    </span>
                 </li>
             {% endfor %}
             </ul>
         {% else %}
-            <p>You are not currently a member of any teams.</p>
+            <div class="p-4 bg-white rounded-xl shadow border border-gray-200">
+                <p class="text-gray-500">You are not currently a member of any teams.</p>
+            </div>
         {% endif %}
     </div>
-    <hr>
-    <div class="actions-section">
-        <a href="{% url 'dashboard:goal_create' %}" class="button"> Add New Goal</a>
-        <a href="{% url 'teams:team_create' %}" class="button"> Create New Team</a>
-        <a href="{% url 'teams:team_list' %}" class="button"> Join Team</a>
-    </div>
 
+</div>
 {% endblock %}
 
 
-
 {% block extra_js %}
-    <div id="reflectionModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
-      <div class="modal-content" style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 600px; position: relative;">
-        <span class="close-button" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
-        <div id="modalBody">
+    <div id="reflectionModal" class="fixed inset-0 z-50 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center">
+      <div class="modal-content bg-white rounded-xl shadow-2xl w-full max-w-xl m-4 transform transition-all duration-300 ease-out">
+        <div class="flex justify-between items-center p-6 border-b border-gray-200">
+            <h3 class="text-xl font-bold">Goal Reflection</h3>
+            <button class="close-button text-gray-400 hover:text-gray-600 focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div id="modalBody" class="p-6">
             Loading reflection details...
         </div>
       </div>
@@ -110,27 +171,31 @@
             const modalBody = document.getElementById('modalBody');
             const closeButton = document.querySelector('.close-button');
 
-            // Function to open the modal and load content
-            function openReflectionModal(goalId) {
+            const openReflectionModal = (goalId) => {
                 const url = `{% url 'dashboard:goal_reflection_fragment' goal_id=0 %}`.replace('0', goalId);
                 
-                // Use the Fetch API to get the HTML fragment
+                // Show loading state and modal
+                modalBody.innerHTML = '<div class="flex justify-center items-center h-24"><svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Loading reflection details...</div>';
+                modal.classList.remove('hidden');
+
                 fetch(url)
-                    .then(response => response.text())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.text();
+                    })
                     .then(html => {
-                        modalBody.innerHTML = html; // Insert the fetched HTML fragment
-                        modal.style.display = "block"; // Show the modal
+                        modalBody.innerHTML = html; 
                     })
                     .catch(error => {
                         console.error('Error fetching reflection data:', error);
-                        modalBody.innerHTML = '<p style="color: red;">Could not load reflection data.</p>';
-                        modal.style.display = "block";
+                        modalBody.innerHTML = '<p class="text-red-600">Could not load reflection data. Please try again.</p>';
                     });
-            }
+            };
 
-            // Bind the click event to all "Reflect on Progress" buttons
+            // Event listener for opening the modal
             document.querySelectorAll('.button-reflect').forEach(button => {
-                // We use a custom data attribute to store the goal ID
                 button.addEventListener('click', function(e) {
                     e.preventDefault();
                     const goalId = this.getAttribute('data-goal-id');
@@ -138,15 +203,16 @@
                 });
             });
 
-            // Close modal when 'x' is clicked
-            closeButton.onclick = function() {
-                modal.style.display = "none";
-            }
+            // Event listener for closing the modal (button and outside click)
+            const closeModal = () => {
+                modal.classList.add('hidden');
+            };
 
-            // Close modal when user clicks outside of it
+            closeButton.onclick = closeModal;
+
             window.onclick = function(event) {
-                if (event.target == modal) {
-                    modal.style.display = "none";
+                if (event.target === modal) {
+                    closeModal();
                 }
             }
         });

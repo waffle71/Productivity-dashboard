@@ -30,7 +30,7 @@ class Goal(models.Model):
     )
         
     completed = models.BooleanField(default=False)
-    
+    created_at = models.DateTimeField(auto_now_add=True)
     # Stored as a string like '1111100' (Mon-Fri) 
     days_of_the_week = models.CharField(max_length=7, blank=True) 
     

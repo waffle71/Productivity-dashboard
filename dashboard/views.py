@@ -2,62 +2,88 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import F
+from django.db import transaction
+from django.db.models.functions import TruncDate
 from teams.models import TeamMember
 from .models import Goal, TimeLog
 from .forms import GoalForm, TimeLogForm
-from datetime import timedelta
+from datetime import timedelta, date
+
 
 @login_required
 def dashboard_view(request):
     """
-    Displays the main productivity dashboard for the logged-in user.
-    Shows current goals and progress.
+    Displays the main dashboard for the user, including goal progress,
+    streaks, and team information.
     """
+    # Fetch all personal goals for the logged-in user
+    user_goals = Goal.objects.filter(user=request.user).order_by('-created_at')
     
-    # 1. Fetch the user's current goals
-    # We filter goals that are not yet marked as completed
-    user_goals = Goal.objects.filter(user=request.user, completed=False).order_by('-importance_level', 'start_date')
+    # Pre-fetch all distinct log dates for the user to optimize the loop
+    # We use TruncDate to ensure we only compare the date part, not time
+    all_user_log_dates = TimeLog.objects.filter(
+        user=request.user
+    ).annotate(
+        logged_day=TruncDate('log_date')
+    ).values_list('logged_day', flat=True).distinct().order_by('-logged_day')
     
-    # 2. Calculate progress and streaks for each goal
     goals_with_progress = []
+    completed_goals_count = 0
     
     for goal in user_goals:
-        # Calculate Time Progress
-        # Convert total real_time to seconds for calculation
-        real_time_seconds = goal.real_time.total_seconds()
-        target_time_seconds = goal.target_time.total_seconds()
+        # Calculate Progress Percentage
+        target_time_minutes = goal.target_time.total_seconds() / 60 if goal.target_time else 0
+        real_time_minutes = goal.real_time.total_seconds() / 60 if goal.real_time else 0
         
-        if target_time_seconds > 0:
-            progress_percentage = (real_time_seconds / target_time_seconds) * 100
+        if target_time_minutes > 0:
+            progress_percentage = min(100, int((real_time_minutes / target_time_minutes) * 100))
         else:
             progress_percentage = 0
+
+        if goal.completed:
+            completed_goals_count += 1
             
-        # Example Streak Logic (Simplistic)
-        # This is a basic example; a real streak would be more complex
-        current_streak = TimeLog.objects.filter(
-            user=request.user, 
-            goal=goal
-        ).order_by('-log_date').distinct().count() # Counts days with logs
+        # --- ADVANCED STREAK CALCULATION (NEW LOGIC) ---
+        current_streak = 0
         
+        # Get unique log dates ONLY for the current goal
+        goal_log_dates = TimeLog.objects.filter(
+            goal=goal
+        ).annotate(
+            logged_day=TruncDate('log_date')
+        ).values_list('logged_day', flat=True).distinct()
+        
+        logged_dates_set = set(d.date() for d in goal_log_dates if d is not None)
+
+        today = date.today()
+        # Start checking from today if there's a log, otherwise start from yesterday
+        # This handles the "day off" where the streak shouldn't break yet
+        check_date = today
+        
+        # Check if the user logged today
+        if today not in logged_dates_set:
+            check_date = today - timedelta(days=1)
+        
+        # Check consecutive days backward
+        while check_date in logged_dates_set:
+            current_streak += 1
+            check_date -= timedelta(days=1)
+        # --- END ADVANCED STREAK CALCULATION ---
+
         goals_with_progress.append({
             'goal': goal,
-            'progress_percentage': round(progress_percentage, 2),
-            'current_streak': current_streak
+            'progress_percentage': progress_percentage,
+            'current_streak': current_streak,
         })
 
-
-    completed_goals_count = Goal.objects.filter(user=request.user, completed=True).count()
-    
-    user_teams_membership = TeamMember.objects.filter(
-        user=request.user
-    ).select_related('team') # Use select_related to fetch Team details efficiently
+    # Fetch user's team memberships (assuming TeamMember model is accessible)
+    user_teams = request.user.teammember_set.all()
 
     context = {
         'goals_with_progress': goals_with_progress,
         'completed_goals_count': completed_goals_count,
-        'user_teams': user_teams_membership,
+        'user_teams': user_teams,
     }
-    
     return render(request, 'dashboard/dashboard.html', context)
 
 @login_required

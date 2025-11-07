@@ -3,32 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Productivity Dashboard</title>
+    <title>Your Site</title>
     <style>
-        /* Basic styles for demonstration */
-        body { font-family: sans-serif; margin: 20px; }
-        nav { margin-bottom: 20px; }
-        nav a { margin-right: 15px; }
-        .messages { list-style: none; padding: 0; }
-        .messages li { padding: 10px; margin-bottom: 10px; border-radius: 5px; }
-        .messages li.success { background-color: #d4edda; color: #155724; }
-        .messages li.error { background-color: #f8d7da; color: #721c24; }
-        .messages li.info { background-color: #d1ecf1; color: #0c5460; }
+       
     </style>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+    
 </head>
 <body>
-
-    <nav>
-        <a href="/">Home</a>
-        {% if user.is_authenticated %}
-            <a href="{% url 'dashboard:dashboard_view' %}">Dashboard</a>
-            <a href="{% url 'users:logout' %}">Logout</a>
-        {% else %}
-            <a href="{% url 'users:login' %}">Login</a>
-            <a href="{% url 'users:register' %}">Register</a>
-        {% endif %}
-    </nav>
-
     {% if messages %}
         <ul class="messages">
             {% for message in messages %}
@@ -41,6 +27,5 @@
         {% block content %}
         {% endblock %}
     </main>
-
 </body>
 </html>
