@@ -1,9 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h2>Log Time for "{{ goal.title }}"</h2>
-    <p>You are logging time for your goal with a **{{ goal.target_time }} target**.</p>
-    <p>Current time logged: {{ goal.real_time|floatformat:1 }}</p>
+    <h2>{{ page_title }}</h2>
+    <p>You are managing a time log for "{{ goal.title }}".</p>
+    <p>
+        <strong>Target time:</strong> {{ goal.target_time }} |
+        <strong>Logged so far:</strong> {{ goal.real_time }}
+    </p>
+
+    {% if time_log %}
+        <p><strong>Log date:</strong> {{ time_log.log_date|date:"Y-m-d" }}</p>
+    {% endif %}
 
     <form method="post">
         {% csrf_token %}
@@ -23,7 +30,13 @@
         
         {{ form.as_p }} 
         
-        <button type="submit" class="button-primary">Submit Time</button>
+        <button type="submit" class="button-primary">
+            {% if is_edit %}
+                Update Time Log
+            {% else %}
+                Submit Time
+            {% endif %}
+        </button>
         <a href="{% url 'dashboard:dashboard_view' %}" class="button-secondary">Cancel</a>
     </form>
 {% endblock %}
