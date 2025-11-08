@@ -54,7 +54,9 @@
                 
                 {% for item in team_goals_list %}
                 <div class="goal-card bg-white p-6 rounded-xl border border-gray-200 shadow-md">
-                    <h4 class="text-xl font-semibold text-gray-900 mb-3">{{ item.goal.title }}</h4>
+                    <a href="{% url 'teams:team_goal_detail' team_id=team.id goal_id=item.goal.id %}" class="block hover:text-indigo-600">
+                        <h4 class="text-xl font-semibold text-gray-900 mb-3">{{ item.goal.title }}</h4>
+                    </a>
                     <p class="text-sm text-gray-500 mb-4 h-12 overflow-hidden">{{ item.goal.description|truncatechars:80 }}</p>
 
                     <div class="progress-bar-container w-full bg-gray-200 rounded-full h-3 mb-2">
@@ -93,7 +95,7 @@
             <div class="p-8 text-center bg-white rounded-xl shadow border border-gray-200">
                 <p class="text-lg text-gray-500">This team has no active goals.</p>
                 {% if current_user_role == 'ADMIN' %}
-                <a href="#" class="mt-4 button button-primary">Set the First Team Goal!</a>
+                <a href="{% url 'teams:team_goal_create' team_id=team.id %}" class="mt-4 button button-primary">Set the First Team Goal!</a>
                 {% endif %}
             </div>
         {% endif %}

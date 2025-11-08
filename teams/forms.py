@@ -1,10 +1,13 @@
 # In teams/forms.py (New File)
 
 from django import forms
-from .models import Team, TeamGoal, TeamTimeLog
+from django.contrib.auth import get_user_model
+from .models import Team, TeamGoal, TeamTimeLog, TeamGoalComment, TeamTask, TeamMember
 from datetime import timedelta
 from django.core.exceptions import ValidationError
 from .models import Team
+
+User = get_user_model()
 
 TW_INPUT = "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
 TW_TEXTAREA = "mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -103,4 +106,57 @@ class TeamTimeLogForm(forms.ModelForm):
             'log_date': 'Date of Work',
             'minutes': 'Minutes Logged',
             'notes': 'Notes (What did you do?)'
+        }
+
+class TeamGoalCommentForm(forms.ModelForm):
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # ... (all your styling code) ...
+        self.fields['body'].widget.attrs.update({
+            'class': '...', 
+            'rows': 3,
+            'placeholder': 'Add your comment...'
+        })
+
+    class Meta:
+        model = TeamGoalComment
+        fields = ['body'] # Only the field the user fills out
+        labels = {
+            'body': 'New Comment'
+        }
+
+class TeamTaskForm(forms.ModelForm):
+    
+    def __init__(self, *args, **kwargs):
+        # --- This is the key part ---
+        # Pop the 'team' object passed from the view
+        team = kwargs.pop('team', None) 
+        # --- End key part ---
+        
+        super().__init__(*args, **kwargs)
+        
+        common_classes = 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
+        
+        self.fields['title'].widget.attrs.update({'class': common_classes})
+        self.fields['due_date'].widget.attrs.update({'class': common_classes}) # Keep this line
+        self.fields['assigned_to'].widget.attrs.update({'class': common_classes})
+        # --- This filters the dropdown ---
+        if team:
+            # Get all user objects for members of this team
+            member_users = TeamMember.objects.filter(team=team).values_list('user', flat=True)
+            self.fields['assigned_to'].queryset = (
+                User.objects.filter(id__in=member_users)
+            )
+
+    class Meta:
+        model = TeamTask
+        fields = ['title', 'assigned_to', 'due_date']
+        labels = {
+            'title': 'Task Name',
+            'assigned_to': 'Assign to',
+            'due_date': 'Due Date'
+        }
+        widgets = {
+            'due_date': forms.DateInput(attrs={'type': 'date'}),
         }

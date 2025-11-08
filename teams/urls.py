@@ -22,6 +22,9 @@ urlpatterns = [
     path('<int:team_id>/goal/<int:goal_id>/delete/', views.team_goal_delete_view, name='team_goal_delete'),
 
     path('<int:team_id>/goal/<int:goal_id>/log/', views.team_time_log_create_view, name='team_time_log_create'),
+
+    path('<int:team_id>/goal/<int:goal_id>/', views.team_goal_detail_view, name='team_goal_detail'),
+
     # New URL for the Admin Dashboard
     path('admin/dashboard/', views.admin_dashboard_view, name='admin_dashboard'),
     
