@@ -2,7 +2,6 @@
 
 {% block extra_css %}
 <style>
-    /* Basic custom styles for better readability and structure */
     body {
         font-family: 'Inter', sans-serif;
         background-color: #f7f7f9;
@@ -13,25 +12,6 @@
     .goal-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
-    /* Button styles (using Tailwind for core structure, but defining namespaced colors) */
-    .button {
-        @apply inline-flex items-center justify-center px-4 py-2 font-semibold rounded-lg transition duration-150 ease-in-out text-center shadow-md;
-    }
-    .button-primary {
-        @apply bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50;
-    }
-    .button-secondary {
-        @apply bg-gray-200 text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-4 focus:ring-gray-400 focus:ring-opacity-50;
-    }
-    .button-log {
-        @apply bg-green-500 text-white hover:bg-green-600 focus:outline-none focus:ring-4 focus:ring-green-400 focus:ring-opacity-50;
-    }
-    .button-reflect {
-        @apply bg-indigo-500 text-white hover:bg-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-400 focus:ring-opacity-50;
-    }
-    .button-danger {
-        @apply bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50;
     }
 </style>
 {% endblock %}
@@ -99,6 +79,9 @@
                         <a href="javascript:void(0)" class="button button-reflect flex-1" data-goal-id="{{ item.goal.id }}">
                             Reflect
                         </a>
+                        <!-- <a href="{% url 'dashboard:goal_reflection_fragment' goal_id=item.goal.id %}" class="button button-reflect flex-1" target="_blank">
+                            Reflect (TEST)
+                        </a> -->
 
                         <a href="{% url 'dashboard:goal_edit' goal_id=item.goal.id %}" 
                         class="button button-secondary px-3 py-1.5 text-sm">
