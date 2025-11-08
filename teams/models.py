@@ -28,7 +28,7 @@ class Team(models.Model):
 class TeamMember(models.Model):
     """
     Links a user to a team and defines their role within that team.
-    This is the 'Team_members' table 
+    This is the 'Team_members' table.
     """
     class Role(models.TextChoices):
         MEMBER = 'MEMBER', 'Member'
@@ -70,6 +70,15 @@ class TeamGoal(models.Model):
     completed = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def target_minutes(self):
+        """Converts the target_time DurationField into total minutes."""
+        if self.target_time:
+            # total_seconds() is the reliable way to get duration
+            return int(self.target_time.total_seconds() / 60)
+        return 0
+    
     def __str__(self):
         return f"Team Goal: {self.title} ({self.team.team_name})"
 

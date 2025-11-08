@@ -1,14 +1,151 @@
-{% comment %} 
-    You need to ensure the team_dashboard_view passes the current user's role 
-    (e.g., 'current_user_role') in the context. Assuming you do this: 
-{% endcomment %}
+{% extends "base.html" %}
+{% load static %} {% block extra_css %}
+<style>
+    /* Copied from your dashboard.html for consistent hover effects */
+    .goal-card, .teams-section {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .goal-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+</style>
+{% endblock %}
 
-{% if current_user_role == 'ADMIN' %}
-    <div class="team-admin-actions">
-        <h3>Team Admin Actions</h3>
-        <a href="{% url 'teams:team_member_tasks' team_id=team.id %}" class="button button-primary">
-            👥 View All Member Tasks
-        </a>
+{% block content %}
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    
+    <div class="dashboard-header mb-8 p-6 bg-white rounded-xl shadow-lg">
+        <h2 class="text-3xl font-extrabold text-gray-900">
+            <svg class="w-10 h-10 inline-block mr-2 -mt-1 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20v-2c0-.656-.126-1.283-.356-1.857M17 20v-2c0-.656-.126-1.283-.356-1.857M10 12l2-1m-2 1l-2-1m-2 1h-2a2 2 0 00-2 2v2a2 2 0 002 2h6m-4-6h4m-4 0v2m2-2h-2m2 0v2m2-2h-2m2 0v2m2-2h-2m2 0v2"></path></svg>
+            {{ team.team_name }}
+        </h2>
+        <p class="mt-2 text-xl text-gray-600">{{ team.team_desc }}</p>
+    </div>
+
+    <div class="actions-section mb-8 p-4 bg-white rounded-xl shadow">
+        <h3 class="text-xl font-semibold mb-3 text-gray-800">Team Actions</h3>
+        <div class="flex flex-wrap gap-3">
+            {% if current_user_role == 'ADMIN' %}
+            <a href="{% url 'teams:team_goal_create' team_id=team.id %}" class="button button-primary">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Add New Team Goal
+            </a>
+            {% endif %}
+
+            <a href="#" class="button button-secondary">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Log Time for Team
+            </a>
+            
+            {% if current_user_role == 'ADMIN' %}
+            <a href="#" class="button button-secondary-danger">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                Invite Member
+            </a>
+            {% endif %}
         </div>
-    <hr>
-{% endif %}
+    </div>
+
+    <div class="active-goals-section mb-8">
+        <h3 class="text-2xl font-bold mb-4 text-gray-800">Team Goals</h3>
+        {% if team_goals_list %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                {% for item in team_goals_list %}
+                <div class="goal-card bg-white p-6 rounded-xl border border-gray-200 shadow-md">
+                    <h4 class="text-xl font-semibold text-gray-900 mb-3">{{ item.goal.title }}</h4>
+                    <p class="text-sm text-gray-500 mb-4 h-12 overflow-hidden">{{ item.goal.description|truncatechars:80 }}</p>
+
+                    <div class="progress-bar-container w-full bg-gray-200 rounded-full h-3 mb-2">
+                        <div class="progress-bar h-3 rounded-full bg-indigo-600" style="width: {{ item.percentage }}%;"></div>
+                    </div>
+                    <p class="text-xs font-medium text-indigo-700 mb-4">{{ item.percentage|floatformat:1 }}% Complete</p>
+                    
+                    <div class="grid grid-cols-2 gap-3 mb-4 text-sm text-gray-700">
+                        <div class="p-2 bg-gray-50 rounded-lg">
+                            <span class="block font-bold">{{ item.logged_minutes }} / {{ item.target_minutes }}</span>
+                            <span class="block text-xs text-gray-500">Minutes Logged</span>
+                        </div>
+                        <div class="p-2 bg-gray-50 rounded-lg">
+                            <span class="block font-bold text-red-600">{{ item.goal.end_date|date:"M d, Y" }}</span>
+                            <span class="block text-xs text-gray-500">Due Date</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
+                        <a href="#" class="button button-log flex-1">Log Time</a>
+                        
+                        {% if current_user_role == 'ADMIN' %}
+                        <a href="{% url 'teams:team_goal_edit' team_id=team.id goal_id=item.goal.id %}" class="button button-secondary px-3 py-1.5 text-sm">
+                            Edit
+                        </a>
+                        <a href="{% url 'teams:team_goal_delete' team_id=team.id goal_id=item.goal.id %}" class="button button-danger px-3 py-1.5 text-sm">
+                            Delete
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+
+            </div>
+        {% else %}
+            <div class="p-8 text-center bg-white rounded-xl shadow border border-gray-200">
+                <p class="text-lg text-gray-500">This team has no active goals.</p>
+                {% if current_user_role == 'ADMIN' %}
+                <a href="#" class="mt-4 button button-primary">Set the First Team Goal!</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    <hr classs="my-8 border-gray-300">
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <div class="teams-section">
+            <h3 class="text-2xl font-bold mb-4 text-gray-800">Team Members</h3>
+            <ul class="space-y-3 p-4 bg-white rounded-xl shadow border border-gray-200">
+            {% for member in team_members %}
+                <li class="flex justify-between items-center border-b pb-3 last:border-b-0">
+                    <span class="text-lg font-medium text-gray-800">
+                        {{ member.user.username }}
+                    </span>
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
+                        Role: {{ member.get_role_display }}
+                    </span>
+                </li>
+            {% empty %}
+                <li class="text-gray-500">This team has no members.</li>
+            {% endfor %}
+            </ul>
+        </div>
+
+        <div class="teams-section">
+            <h3 class="text-2xl font-bold mb-4 text-gray-800">Member Contributions</h3>
+            <div class="p-4 bg-white rounded-xl shadow border border-gray-200 overflow-x-auto">
+                <table class="w-full min-w-full text-left">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th class="p-3 text-sm font-semibold text-gray-600">Member</th>
+                            <th class="p-3 text-sm font-semibold text-gray-600 text-right">Time Logged</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for contrib in member_contributions %}
+                        <tr class="border-b border-gray-100 last:border-b-0">
+                            <td class="p-3 font-medium text-gray-800">{{ contrib.user__username }}</td>
+                            <td class="p-3 text-gray-700 text-right">{{ contrib.total_minutes }} minutes</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="2" class="p-3 text-gray-500">No time has been logged yet.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

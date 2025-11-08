@@ -3,9 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import transaction, IntegrityError # Important for ensuring both save operations succeed
-from django.db.models import Q, Count, Exists, OuterRef
+from django.db.models import Q, Count, Exists, OuterRef, Sum
+from django.db.models.functions import Coalesce
 from .forms import TeamForm, TeamGoalForm
-from .models import TeamMember, Team
+from .models import TeamMember, Team, TeamGoal, TeamTimeLog
 from dashboard.models import Goal
 from users.decorators import admin_required
 from users.models import CustomUser
@@ -81,37 +82,116 @@ def team_goal_create_view(request, team_id):
     """
     # 1. Check if the team exists AND the user is a member of it.
     team = get_object_or_404(request.user.teams, pk=team_id)
+
+    try:
+        member_instance = TeamMember.objects.get(user=request.user, team=team)
+        if member_instance.role != TeamMember.Role.ADMIN:
+            messages.error(request, "You must be a team admin to create new goals.")
+            return redirect('teams:team_dashboard', team_id=team.id)
+            
+    except TeamMember.DoesNotExist:
+        messages.error(request, "You are not a member of this team.")
+        return redirect('dashboard:dashboard_view') # Redirect to main dashboard
     
     if request.method == 'POST':
         form = TeamGoalForm(request.POST)
         if form.is_valid():
-            # 2. Save the goal instance, but don't commit yet
-            team_goal = form.save(commit=False)
-            
-            # 3. Assign the target team
-            team_goal.team = team
-            
-            # 4. Save the instance
-            team_goal.save()
-            
-            messages.success(request, f"Team Goal '{team_goal.title}' created successfully for {team.team_name}!")
-            
-            # Redirect back to the team's detail page
-            return redirect('teams:team_detail', team_id=team.id)
+            goal = form.save(commit=False)
+            goal.team = team  # Assign the team from the URL
+            goal.save()
+            messages.success(request, f"New goal '{goal.title}' has been created!")
+            return redirect('teams:team_dashboard', team_id=team.id)
         else:
             messages.error(request, "Please correct the errors below.")
             
-    else:
-        # GET request: show a blank form
+    else: # GET Request
         form = TeamGoalForm()
-    
+
     context = {
+        'page_title': 'Create New Goal',
+        'form': form,
+        'team': team
+    }
+    return render(request, 'teams/team_goal_form.html', context)
+
+@login_required
+def team_goal_edit_view(request, team_id, goal_id):
+    """
+    Handles editing an existing team goal.
+    Only Team Admins can access this.
+    """
+    team = get_object_or_404(Team, pk=team_id)
+    goal = get_object_or_404(TeamGoal, pk=goal_id, team=team) # Ensure goal belongs to team
+
+    # --- Security Check: User must be an Admin ---
+    try:
+        member_instance = TeamMember.objects.get(user=request.user, team=team)
+        if member_instance.role != TeamMember.Role.ADMIN:
+            messages.error(request, "You must be a team admin to edit goals.")
+            return redirect('teams:team_dashboard', team_id=team.id)
+    except TeamMember.DoesNotExist:
+        messages.error(request, "You are not a member of this team.")
+        return redirect('dashboard:dashboard_view') # Or your main dashboard
+    # --- End Security Check ---
+
+    if request.method == 'POST':
+        # Populate the form with POST data AND the existing goal instance
+        form = TeamGoalForm(request.POST, instance=goal)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Goal '{goal.title}' has been updated.")
+            return redirect('teams:team_dashboard', team_id=team.id)
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        # GET request: Populate the form with the goal's current data
+        form = TeamGoalForm(instance=goal)
+
+    context = {
+        'page_title': f'Edit Goal: {goal.title}',
         'form': form,
         'team': team,
-        'page_title': f'Create New Team Goal for {team.team_name}'
+        'goal': goal
     }
-    # We will use the same form template as the personal goals, but perhaps in the teams folder
+    # We reuse the same template as the create view!
     return render(request, 'teams/team_goal_form.html', context)
+
+
+@login_required
+def team_goal_delete_view(request, team_id, goal_id):
+    """
+    Handles deleting a team goal after confirmation.
+    Only Team Admins can access this.
+    """
+    team = get_object_or_404(Team, pk=team_id)
+    goal = get_object_or_404(TeamGoal, pk=goal_id, team=team)
+
+    # --- Security Check (Same as Update View) ---
+    try:
+        member_instance = TeamMember.objects.get(user=request.user, team=team)
+        if member_instance.role != TeamMember.Role.ADMIN:
+            messages.error(request, "You must be a team admin to delete goals.")
+            return redirect('teams:team_dashboard', team_id=team.id)
+    except TeamMember.DoesNotExist:
+        messages.error(request, "You are not a member of this team.")
+        return redirect('dashboard:dashboard_view')
+    # --- End Security Check ---
+
+    if request.method == 'POST':
+        # User has confirmed deletion
+        goal_title = goal.title
+        goal.delete()
+        messages.success(request, f"The goal '{goal_title}' has been deleted.")
+        return redirect('teams:team_dashboard', team_id=team.id)
+    
+    # GET request: Show the confirmation page
+    context = {
+        'page_title': 'Confirm Deletion',
+        'team': team,
+        'goal': goal
+    }
+    return render(request, 'teams/team_goal_confirm_delete.html', context)
+
 
 @admin_required
 def user_management_view(request):
@@ -183,8 +263,6 @@ def team_member_tasks_view(request, team_id):
 
 # In teams/views.py (Modify the existing team_dashboard_view)
 
-# Make sure you have TeamMember imported
-from .models import Team, TeamMember 
 
 @login_required
 def team_dashboard_view(request, team_id):
@@ -211,15 +289,54 @@ def team_dashboard_view(request, team_id):
     # --- END: Role Check Logic ---
 
     # Example: Fetch other team data here (members list, team goals, etc.)
+    # 1. Get Team Members
+    team_members = TeamMember.objects.filter(team=team).select_related('user')
+
+    # 2. Get Team Goals with Progress
+    team_goals_query = TeamGoal.objects.filter(team=team).annotate(
+        logged_minutes=Coalesce(Sum('time_logs__minutes'), 0)
+    ).order_by('end_date')
+
+    team_goals_with_progress = []
+    for goal in team_goals_query:
+        percentage = 0
+        # Use the target_minutes property from the model
+        target = goal.target_minutes 
+        logged = goal.logged_minutes
+        
+        if target > 0:
+            percentage = (logged / target) * 100
+            
+        team_goals_with_progress.append({
+            'goal': goal,
+            'logged_minutes': logged,
+            'target_minutes': target,
+            'percentage': percentage,
+        })
+
+    # 3. Get Member Contributions (Time Logs)
+    member_contributions = TeamTimeLog.objects.filter(
+        goal__team=team
+    ).values(
+        'user__username'  # Group by username
+    ).annotate(
+        total_minutes=Sum('minutes')
+    ).order_by(
+        '-total_minutes'  # Show top contributors first
+    )
 
     context = {
         'page_title': team.team_name,
         'team': team,
-        # PASS THE ROLE TO THE TEMPLATE
         'current_user_role': current_user_role, 
-        # Add other context variables (e.g., 'team_goals', 'members_list')
+        
+        'team_members': team_members, # From your existing code
+        
+        # Pass the new list to the template
+        'team_goals_list': team_goals_with_progress, 
+        
+        'member_contributions': member_contributions,
     }
-    
     return render(request, 'teams/team_dashboard.html', context)
 
 
