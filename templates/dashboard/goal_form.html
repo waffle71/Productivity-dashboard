@@ -1,36 +1,116 @@
 {% extends "base.html" %}
-
 {% block content %}
-    <h2>{{ page_title }}</h2>
-    <p>
-        {% if is_edit %}
-            Update the details of your goal and adjust your targets as needed.
-        {% else %}
-            Define the parameters for your new productivity goal.
-        {% endif %}
-    </p>
+<div class="max-w-3xl mx-auto py-8 px-4">
+  <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ page_title }}</h1>
+  <p class="text-gray-600 mb-6">
+    Define a clear target and the days you’ll work on it. You can always edit later.
+  </p>
 
-    <form method="post">
-        {% csrf_token %}
-        
-        {% if form.errors %}
-            <div style="color: red;">
-                Please correct the errors below:
-                <ul>
-                    {% for field, errors in form.errors.items %}
-                        {% for error in errors %}
-                            <li>{{ field|title }}: {{ error }}</li>
-                        {% endfor %}
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
-        
-        {{ form.as_p }}
+  <form method="post" class="bg-white shadow-xl rounded-xl p-6 border border-gray-200">
+    {% csrf_token %}
 
-        <button type="submit" class="button-primary">
-            {% if is_edit %}Update Goal{% else %}Save Goal{% endif %}
-        </button>
-        <a href="{% url 'dashboard:dashboard_view' %}" class="button-secondary">Cancel</a>
-    </form>
+    {% if form.non_field_errors %}
+      <div class="mb-4 rounded-lg border border-red-300 bg-red-50 text-red-700 p-3">
+        {% for err in form.non_field_errors %}<p>{{ err }}</p>{% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Title -->
+    <div class="mb-5">
+      <label class="block text-sm font-medium text-gray-700">{{ form.title.label }}</label>
+      {{ form.title }}
+      {% for err in form.title.errors %}<p class="text-sm text-red-600 mt-1">{{ err }}</p>{% endfor %}
+    </div>
+
+    <!-- Description -->
+    <div class="mb-5">
+      <label class="block text-sm font-medium text-gray-700">{{ form.description.label }}</label>
+      {{ form.description }}
+      <p class="text-xs text-gray-500 mt-1">Tip: describe what success looks like.</p>
+      {% for err in form.description.errors %}<p class="text-sm text-red-600 mt-1">{{ err }}</p>{% endfor %}
+    </div>
+
+    <!-- Dates -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">{{ form.start_date.label }}</label>
+        {{ form.start_date }}
+        {% for err in form.start_date.errors %}<p class="text-sm text-red-600 mt-1">{{ err }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">{{ form.end_date.label }}</label>
+        {{ form.end_date }}
+        <p class="text-xs text-gray-500 mt-1">Optional</p>
+        {% for err in form.end_date.errors %}<p class="text-sm text-red-600 mt-1">{{ err }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <!-- Target Time -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">{{ form.target_hours.label }}</label>
+        {{ form.target_hours }}
+        <p class="text-xs text-gray-500 mt-1">{{ form.target_hours.help_text }}</p>
+        {% for err in form.target_hours.errors %}<p class="text-sm text-red-600 mt-1">{{ err }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">{{ form.target_minutes.label }}</label>
+        {{ form.target_minutes }}
+        <p class="text-xs text-gray-500 mt-1">{{ form.target_minutes.help_text }}</p>
+        {% for err in form.target_minutes.errors %}<p class="text-sm text-red-600 mt-1">{{ err }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <!-- Active Days -->
+    <div class="mb-5">
+      <label class="block text-sm font-medium text-gray-700">{{ form.days_selection.label }}</label>
+      <div class="mt-2 grid grid-cols-3 sm:grid-cols-7 gap-3">
+        {% for checkbox in form.days_selection %}
+          <label class="inline-flex items-center space-x-2">
+            {{ checkbox.tag }}
+            <span class="text-sm text-gray-800">{{ checkbox.choice_label }}</span>
+          </label>
+        {% endfor %}
+      </div>
+      <p class="text-xs text-gray-500 mt-1">{{ form.days_selection.help_text }}</p>
+      {% for err in form.days_selection.errors %}<p class="text-sm text-red-600 mt-1">{{ err }}</p>{% endfor %}
+    </div>
+
+    <!-- Importance -->
+    <div class="mb-5">
+      <label class="block text-sm font-medium text-gray-700">{{ form.importance_level.label }}</label>
+      <div class="mt-2 flex flex-wrap gap-4">
+        {% for radio in form.importance_level %}
+          <label class="inline-flex items-center space-x-2">
+            {{ radio.tag }} <span class="text-sm text-gray-800">{{ radio.choice_label }}</span>
+          </label>
+        {% endfor %}
+      </div>
+      {% for err in form.importance_level.errors %}<p class="text-sm text-red-600 mt-1">{{ err }}</p>{% endfor %}
+    </div>
+
+    <button type="submit"
+      class="w-full md:w-auto px-6 py-3 rounded-lg bg-indigo-600 text-white font-medium shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      Save Goal
+    </button>
+    <a href="{% url 'dashboard:dashboard_view' %}"
+       class="ml-3 inline-block px-6 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
+      Cancel
+    </a>
+  </form>
+</div>
+
+<!-- Optional: live total display -->
+<script>
+  (function () {
+    const h = document.getElementById("id_target_hours");
+    const m = document.getElementById("id_target_minutes");
+    function clamp() {
+      if (m && m.value) m.value = Math.max(0, Math.min(59, parseInt(m.value || 0, 10) || 0));
+      if (h && h.value) h.value = Math.max(0, parseInt(h.value || 0, 10) || 0);
+    }
+    if (h) h.addEventListener('change', clamp);
+    if (m) m.addEventListener('change', clamp);
+  })();
+</script>
 {% endblock %}
