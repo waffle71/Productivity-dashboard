@@ -10,9 +10,7 @@ urlpatterns = [
     path('', views.dashboard_view, name='dashboard_view'),
     path('goal/new/', views.goal_create_view, name='goal_create'),
     path('goal/<int:goal_id>/edit/', views.goal_edit_view, name='goal_edit'),
-    path('log-time/<int:goal_id>/', views.time_log_view, name='time_log'), 
-    path('goal/<int:goal_id>/log/<int:log_id>/edit/', views.time_log_update_view, name='time_log_edit'),
-    path('goal/<int:goal_id>/log/<int:log_id>/delete/', views.time_log_delete_view, name='time_log_delete'),
-    path('goal/<int:goal_id>/reflection/fragment/', views.goal_reflection_fragment_view, name='goal_reflection_fragment'),
     path('goal/<int:goal_id>/delete/', views.goal_delete_view, name='goal_delete'),
+    path('log-time/<int:goal_id>/', views.time_log_view, name='time_log'), 
+    path('goals/<int:goal_id>/reflection/', views.goal_reflection_fragment, name='goal_reflection_fragment'),
 ]
