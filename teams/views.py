@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db import transaction # Important for ensuring both save operations succeed
-from django.db.models import Q
+from django.core.paginator import Paginator
+from django.db import transaction, IntegrityError # Important for ensuring both save operations succeed
+from django.db.models import Q, Count, Exists, OuterRef
 from .forms import TeamForm, TeamGoalForm
 from .models import TeamMember, Team
 from dashboard.models import Goal
@@ -36,56 +37,32 @@ def admin_dashboard_view(request):
 @login_required
 def team_create_view(request):
     """
-    Handles the creation of a new Team.
-    The user who creates the team is automatically assigned the ADMIN role.
+    Creates a new Team and assigns the creator as ADMIN.
     """
     if request.method == 'POST':
         form = TeamForm(request.POST)
         if form.is_valid():
-            
-            # Use a transaction to ensure both the Team and TeamMember records
-            # are created successfully, or neither are created.
             try:
                 with transaction.atomic():
-                    # 1. Save the Team instance
-                    team = form.save()
-                    
-                    # 2. Create the TeamMember entry for the creator
-                    # Assign the creator the ADMIN role
+                    team = form.save()  # team_name & team_desc already cleaned
                     TeamMember.objects.create(
                         user=request.user,
                         team=team,
                         role=TeamMember.Role.ADMIN
                     )
-                
-                messages.success(request, f"Team '{team.team_name}' created successfully. You are the team admin!")
-                
-                # Redirect to the team's detail page (we will assume its URL name is 'team_dashboard')
+                messages.success(request, f"🎉 Team “{team.team_name}” created! You’re the admin.")
                 return redirect('teams:team_dashboard', team_id=team.id)
-
-            except Exception as e:
-                messages.error(request, f"Error creating team: {e}")
-                
+            except IntegrityError:
+                messages.error(request, "A team with that name already exists. Please try another.")
         else:
-            messages.error(request, "Please correct the errors below.")
-            
+            messages.error(request, "Please fix the errors below.")
     else:
-        # GET request: show a blank form
         form = TeamForm()
-    
-    context = {
+
+    return render(request, 'teams/team_form.html', {
         'form': form,
         'page_title': 'Create a New Team'
-    }
-    return render(request, 'teams/team_form.html', context)
-
-# Placeholder for the team list view
-@login_required
-def team_list_view(request):
-    # Fetch all teams the user is a member of
-    user_teams = request.user.teams.all() 
-    context = {'user_teams': user_teams}
-    return render(request, 'teams/team_list.html', context)
+    })
     
 # Placeholder for the team detail view (needed for the redirect above)
 @login_required
@@ -245,49 +222,99 @@ def team_dashboard_view(request, team_id):
     
     return render(request, 'teams/team_dashboard.html', context)
 
+
 @login_required
 def team_list_view(request):
     """
-    Displays a list of all teams the user can join.
+    Explore teams. Search, filter (All/My/Joinable), and paginate.
+    Annotates each team with:
+      - member_count
+      - is_member (for the current user)
     """
-    # # 1. Get IDs of all teams the user is currently a member of
-    # member_of_teams_ids = TeamMember.objects.filter(
-    #     user=request.user
-    # ).values_list('team_id', flat=True)
+    q = (request.GET.get("q") or "").strip()
+    filt = request.GET.get("filter", "all")  # all | mine | joinable
+    per_page = int(request.GET.get("per_page") or 12)
 
-    # # 2. Fetch all teams that the user is NOT a member of
-    # joinable_teams = Team.objects.exclude(
-    #     id__in=member_of_teams_ids
-    # ).order_by('team_name')
-
-    # context = {
-    #     'page_title': 'Join an Existing Team',
-    #     'joinable_teams': joinable_teams
-    # }
-    # 1. Fetch all teams
-    all_teams = Team.objects.all().order_by('team_name')
-
-    # 2. Get a quick lookup of teams the user is already a member of
-    # This creates a set of team IDs for fast checking in the template/loop
-    member_of_team_ids = set(
-        TeamMember.objects.filter(user=request.user)
-        .values_list('team_id', flat=True)
+    is_member_subq = TeamMember.objects.filter(
+        team=OuterRef('pk'),
+        user=request.user
     )
 
-    # 3. Create a list combining team data with membership status
-    team_data = []
-    for team in all_teams:
-        is_member = team.id in member_of_team_ids
-        team_data.append({
-            'team': team,
-            'is_member': is_member
-        })
+    teams = (
+        Team.objects
+        .annotate(
+            member_count=Count('members', distinct=True),
+            is_member=Exists(is_member_subq)
+        )
+        .order_by('team_name')
+    )
+
+    if q:
+        teams = teams.filter(
+            Q(team_name__icontains=q) | Q(team_desc__icontains=q)
+        )
+
+    if filt == "mine":
+        teams = teams.filter(is_member=True)
+    elif filt == "joinable":
+        teams = teams.filter(is_member=False)
+
+    paginator = Paginator(teams, per_page)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
 
     context = {
-        'page_title': 'Explore and Manage Teams',
-        'all_team_data': team_data, # Renamed variable for clarity
+        "page_title": "Explore and Manage Teams",
+        "page_obj": page_obj,
+        "q": q,
+        "filter": filt,
+        "per_page_options": [12, 24, 48],
     }
-    return render(request, 'teams/team_list.html', context)
+    return render(request, "teams/team_list.html", context)
+
+# @login_required
+# def team_list_view(request):
+#     """
+#     Displays a list of all teams the user can join.
+#     """
+#     # # 1. Get IDs of all teams the user is currently a member of
+#     # member_of_teams_ids = TeamMember.objects.filter(
+#     #     user=request.user
+#     # ).values_list('team_id', flat=True)
+
+#     # # 2. Fetch all teams that the user is NOT a member of
+#     # joinable_teams = Team.objects.exclude(
+#     #     id__in=member_of_teams_ids
+#     # ).order_by('team_name')
+
+#     # context = {
+#     #     'page_title': 'Join an Existing Team',
+#     #     'joinable_teams': joinable_teams
+#     # }
+#     # 1. Fetch all teams
+#     all_teams = Team.objects.all().order_by('team_name')
+
+#     # 2. Get a quick lookup of teams the user is already a member of
+#     # This creates a set of team IDs for fast checking in the template/loop
+#     member_of_team_ids = set(
+#         TeamMember.objects.filter(user=request.user)
+#         .values_list('team_id', flat=True)
+#     )
+
+#     # 3. Create a list combining team data with membership status
+#     team_data = []
+#     for team in all_teams:
+#         is_member = team.id in member_of_team_ids
+#         team_data.append({
+#             'team': team,
+#             'is_member': is_member
+#         })
+
+#     context = {
+#         'page_title': 'Explore and Manage Teams',
+#         'all_team_data': team_data, # Renamed variable for clarity
+#     }
+#     return render(request, 'teams/team_list.html', context)
 
 @login_required
 def team_join_view(request, team_id):

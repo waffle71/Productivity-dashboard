@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container mx-auto p-4">
+        <h2 class="text-2xl font-bold mb-4">{{ page_title }}</h2>
+        
+        <div class="p-6 bg-red-100 border border-red-400 text-red-700 rounded-lg mb-6">
+            <p class="font-semibold mb-2"> WARNING: You are about to permanently delete this time log.</p>
+            <p>
+                Deleting the log of <strong>{{ log_instance.minutes }} minutes</strong> 
+                for the goal <strong>"{{ goal.title }}"</strong> will subtract this time from the goal's total progress.
+            </p>
+            <p class="mt-2">This action cannot be undone.</p>
+        </div>
+
+        <form method="post" action="{% url 'dashboard:time_log_delete' log_id=log_instance.id %}">
+            {% csrf_token %}
+            
+            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out mr-4">
+                Yes, Delete Log Permanently
+            </button>
+            <a href="{% url 'dashboard:dashboard_view' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded transition duration-150 ease-in-out">
+                No, Go Back
+            </a>
+        </form>
+    </div>
+{% endblock %}

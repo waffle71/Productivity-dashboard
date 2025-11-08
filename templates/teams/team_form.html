@@ -1,29 +1,63 @@
 {% extends "base.html" %}
-
 {% block content %}
-    <h2>{{ page_title }}</h2>
-    <p>Create a new team to share goals and challenges with others.</p>
+<div class="max-w-2xl mx-auto py-8 px-4">
+  <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ page_title }}</h1>
+  <p class="text-gray-600 mb-6">
+    Create a team to collaborate on goals, share progress, and keep each other accountable.
+  </p>
 
-    <form method="post">
-        {% csrf_token %}
-        
-        {% if form.errors %}
-            <div style="color: red;">
-                Please correct the errors below:
-                <ul>
-                    {% for field, errors in form.errors.items %}
-                        {% for error in errors %}
-                            <li>{{ field|title }}: {{ error }}</li>
-                        {% endfor %}
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
-        
-        {{ form.as_p }} 
-        
-        <button type="submit" class="button-primary">Create Team</button>
-        <a href="{% url 'teams:team_list' %}" class="button-secondary">Cancel</a>
-        <a href="{% url 'dashboard:dashboard_view' %}" class="button-secondary">Cancel</a>
-    </form>
+  <form method="post" class="bg-white shadow-xl rounded-xl p-6 border border-gray-200">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="mb-4 rounded-lg border border-red-300 bg-red-50 text-red-700 p-3">
+        {% for err in form.non_field_errors %}<p>{{ err }}</p>{% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Team name -->
+    <div class="mb-5">
+      <label for="{{ form.team_name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+        {{ form.team_name.label }}
+      </label>
+      {{ form.team_name }}
+      {% if form.team_name.help_text %}
+        <p class="text-xs text-gray-500 mt-1">{{ form.team_name.help_text }}</p>
+      {% endif %}
+      {% for err in form.team_name.errors %}
+        <p class="text-sm text-red-600 mt-1">{{ err }}</p>
+      {% endfor %}
+    </div>
+
+    <!-- Description -->
+    <div class="mb-6">
+      <label for="{{ form.team_desc.id_for_label }}" class="block text-sm font-medium text-gray-700">
+        {{ form.team_desc.label }}
+      </label>
+      {{ form.team_desc }}
+      {% if form.team_desc.help_text %}
+        <p class="text-xs text-gray-500 mt-1">{{ form.team_desc.help_text }}</p>
+      {% endif %}
+      {% for err in form.team_desc.errors %}
+        <p class="text-sm text-red-600 mt-1">{{ err }}</p>
+      {% endfor %}
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+      <button type="submit"
+        class="inline-flex items-center justify-center px-5 py-3 rounded-lg bg-indigo-600 text-white font-medium shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        Create Team
+      </button>
+      <a href="{% url 'dashboard:dashboard_view' %}"
+         class="inline-flex items-center justify-center px-5 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
+        Cancel
+      </a>
+    </div>
+  </form>
+
+  <!-- Optional: quick tips -->
+  <div class="mt-6 text-sm text-gray-500">
+    <p>Tip: Use a clear, specific name (e.g., “CS350 Weekly Sprint” or “5AM Gym Buddies”).</p>
+  </div>
+</div>
 {% endblock %}
