@@ -392,32 +392,62 @@ def time_log_delete_view(request, log_id):
     }
     return render(request, 'dashboard/time_log_confirm_delete.html', context)
 
-@login_required
-def goal_reflection_fragment_view(request, goal_id): # Renamed function
-    """
-    Returns only the HTML fragment (content) needed for the reflection modal.
-    """
-    # Ensure the goal exists AND belongs to the logged-in user
-    goal = get_object_or_404(Goal, pk=goal_id, user=request.user)
+# @login_required
+# def goal_reflection_fragment_view(request, goal_id): # Renamed function
+#     """
+#     Returns only the HTML fragment (content) needed for the reflection modal.
+#     """
+#     # Ensure the goal exists AND belongs to the logged-in user
+#     goal = get_object_or_404(Goal, pk=goal_id, user=request.user)
     
-    # Calculate progress for display
-    real_time_seconds = goal.real_time.total_seconds()
-    target_time_seconds = goal.target_time.total_seconds()
+#     # Calculate progress for display
+#     real_time_seconds = goal.real_time.total_seconds()
+#     target_time_seconds = goal.target_time.total_seconds()
     
-    progress_percentage = 0
-    if target_time_seconds > 0:
-        progress_percentage = round((real_time_seconds / target_time_seconds) * 100, 2)
+#     progress_percentage = 0
+#     if target_time_seconds > 0:
+#         progress_percentage = round((real_time_seconds / target_time_seconds) * 100, 2)
         
-    time_logs = TimeLog.objects.filter(
-        user=request.user, 
-        goal=goal
-    ).order_by('-log_date', '-minutes') 
+#     time_logs = TimeLog.objects.filter(
+#         user=request.user, 
+#         goal=goal
+#     ).order_by('-log_date', '-minutes') 
+    
+#     context = {
+#         'goal': goal,
+#         'progress_percentage': progress_percentage,
+#         'time_logs': time_logs,
+#     }
+    
+#     # Render only the fragment template
+#     return render(request, 'dashboard/reflection_fragment.html', context)
+
+# ... your other views (dashboard, goal_create, etc.) ...
+
+@login_required
+def goal_reflection_fragment(request, goal_id):
+    """
+    Fetches and renders an HTML fragment for the reflection modal.
+    This view is called via JavaScript (Fetch API).
+    """
+    # 1. Get the goal, ensuring it belongs to the logged-in user for security.
+    goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+    
+    # 2. Get all related time logs, ordered most recent first.
+    time_logs = goal.time_logs.all().order_by('-log_date', '-created_at')
+    
+    # 3. Calculate summary statistics
+    total_logs = time_logs.count()
+    total_minutes = sum(log.minutes for log in time_logs)
+    total_hours = total_minutes / 60.0
     
     context = {
         'goal': goal,
-        'progress_percentage': progress_percentage,
         'time_logs': time_logs,
+        'total_logs': total_logs,
+        'total_minutes': total_minutes,
+        'total_hours': total_hours,
     }
     
-    # Render only the fragment template
-    return render(request, 'dashboard/reflection_fragment.html', context)
+    # 4. Render the HTML fragment (not a full page)
+    return render(request, 'dashboard/fragments/goal_reflection_fragment.html', context)

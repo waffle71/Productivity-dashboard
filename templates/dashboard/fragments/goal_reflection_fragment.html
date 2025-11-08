@@ -1,0 +1,66 @@
+<div class="reflection-content">
+    <h4 class="text-2xl font-bold text-gray-900 mb-2">{{ goal.title }}</h4>
+    <p class="text-sm text-gray-600 mb-6">A detailed look at your time commitment.</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="p-4 bg-indigo-50 rounded-lg text-center shadow-sm">
+            <span class="block text-2xl font-bold text-indigo-700">{{ total_logs }}</span>
+            <span class="text-sm font-medium text-indigo-600">Total Logs</span>
+        </div>
+        <div class="p-4 bg-green-50 rounded-lg text-center shadow-sm">
+            <span class="block text-2xl font-bold text-green-700">{{ total_minutes }}</span>
+            <span class="text-sm font-medium text-green-600">Total Minutes</span>
+        </div>
+        <div class="p-4 bg-blue-50 rounded-lg text-center shadow-sm">
+            <span class="block text-2xl font-bold text-blue-700">{{ total_hours|floatformat:2 }}</span>
+            <span class="text-sm font-medium text-blue-600">Total Hours</span>
+        </div>
+    </div>
+
+    <h5 class="text-lg font-semibold text-gray-800 mb-3">Log History</h5>
+    
+    {% if time_logs %}
+        <div class="overflow-y-auto max-h-80 border border-gray-200 rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50 sticky top-0">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Date
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Minutes Logged
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Logged At
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for log in time_logs %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {{ log.log_date|date:"F d, Y" }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {{ log.minutes }} min
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" title="{{ log.created_at|date:"F d, Y, P" }}">
+                                {{ log.created_at|timesince }} ago
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="3" class="px-6 py-4 text-center text-gray-500">
+                                No logs found.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="p-4 text-center bg-gray-50 rounded-lg border border-gray-200">
+            <p class="text-gray-600">You haven't logged any time for this goal yet.</p>
+        </div>
+    {% endif %}
+</div>

@@ -33,7 +33,7 @@
     .button-danger {
         @apply bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50;
     }
-</style>
+</style>const url = `{% url 'dashboard:goal_reflection_fragment' goal_id=0 %}`.replace('0', goalId);
 {% endblock %}
 
 {% block content %}
@@ -99,6 +99,9 @@
                         <a href="javascript:void(0)" class="button button-reflect flex-1" data-goal-id="{{ item.goal.id }}">
                             Reflect
                         </a>
+                        <!-- <a href="{% url 'dashboard:goal_reflection_fragment' goal_id=item.goal.id %}" class="button button-reflect flex-1" target="_blank">
+                            Reflect (TEST)
+                        </a> -->
 
                         <a href="{% url 'dashboard:goal_edit' goal_id=item.goal.id %}" 
                         class="button button-secondary px-3 py-1.5 text-sm">

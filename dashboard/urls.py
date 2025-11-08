@@ -14,5 +14,5 @@ urlpatterns = [
     path('log-time/<int:goal_id>/', views.time_log_view, name='time_log'), 
     path('log/edit/<int:log_id>/', views.time_log_edit_view, name='time_log_edit'),    
     path('log/delete/<int:log_id>/', views.time_log_delete_view, name='time_log_delete'),
-    path('goal/<int:goal_id>/reflection/fragment/', views.goal_reflection_fragment_view, name='goal_reflection_fragment'),
+    path('goals/<int:goal_id>/reflection/', views.goal_reflection_fragment, name='goal_reflection_fragment'),
 ]
