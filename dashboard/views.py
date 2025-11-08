@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import F, DurationField, Value, ExpressionWrapper
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 from django.db import transaction
-from django.db.models.functions import TruncDate, Coalesce
 from teams.models import TeamMember
 from .models import Goal, TimeLog
 from .forms import GoalForm, TimeLogForm
@@ -78,40 +78,58 @@ def dashboard_view(request):
     }
     return render(request, 'dashboard/dashboard.html', context)
 
+# @login_required
+# def goal_create_view(request):
+#     """
+#     Handles the creation of a new personal goal.
+#     """
+#     if request.method == 'POST':
+#         form = GoalForm(request.POST)
+#         if form.is_valid():
+#             # 1. Save the goal instance, but don't commit to the database yet
+#             goal = form.save(commit=False)
+            
+#             # 2. Assign the logged-in user to the goal
+#             goal.user = request.user
+            
+#             # 3. Save the instance to the database
+#             goal.save()
+            
+#             messages.success(request, f"Goal '{goal.title}' created successfully!")
+#             # Redirect back to the main dashboard
+#             return redirect('dashboard:dashboard_view')
+#         else:
+#             # If form is invalid, messages will be handled in the template
+#             pass 
+#     else:
+#         # GET request: show a blank form
+#         form = GoalForm()
+    
+#     context = {
+#         'form': form,
+#         'page_title': 'Create a New Goal'
+#     }
+#     return render(request, 'dashboard/goal_form.html', context)
+
+# In dashboard/views.py (Add the following function)
 @login_required
 def goal_create_view(request):
-    """
-    Handles the creation of a new personal goal.
-    """
     if request.method == 'POST':
         form = GoalForm(request.POST)
         if form.is_valid():
-            # 1. Save the goal instance, but don't commit to the database yet
             goal = form.save(commit=False)
-            
-            # 2. Assign the logged-in user to the goal
             goal.user = request.user
-            
-            # 3. Save the instance to the database
             goal.save()
-            
-            messages.success(request, f"Goal '{goal.title}' created successfully!")
-            # Redirect back to the main dashboard
+            messages.success(request, f" Goal “{goal.title}” created successfully!")
             return redirect('dashboard:dashboard_view')
-        else:
-            # If form is invalid, messages will be handled in the template
-            pass 
     else:
-        # GET request: show a blank form
         form = GoalForm()
-    
-    context = {
-        'form': form,
-        'page_title': 'Create a New Goal'
-    }
-    return render(request, 'dashboard/goal_form.html', context)
 
-# In dashboard/views.py (Add the following function)
+    return render(request, 'dashboard/goal_form.html', {
+        'form': form,
+        'page_title': 'Create a New Goal',
+        'is_edit': False,
+    })
 
 @login_required
 def goal_edit_view(request, goal_id):
@@ -179,36 +197,42 @@ def goal_delete_view(request, goal_id):
         is_authorized = True
 
     # Check 2: Is this a Team Goal, and is the user a Team Admin?
-    if hasattr(goal, 'teamgoal') and goal.teamgoal.team:
-        try:
-            member_role = TeamMember.objects.get(
-                user=request.user, 
-                team=goal.teamgoal.team
-            ).role
-            if member_role == TeamMember.Role.ADMIN:
-                is_authorized = True
-        except TeamMember.DoesNotExist:
-            # User is not a member of the team, so they can't be admin.
-            pass
+    # if hasattr(goal, 'teamgoal') and goal.teamgoal.team:
+    #     try:
+    #         member_role = TeamMember.objects.get(
+    #             user=request.user, 
+    #             team=goal.teamgoal.team
+    #         ).role
+    #         if member_role == TeamMember.Role.ADMIN:
+    #             is_authorized = True
+    #     except TeamMember.DoesNotExist:
+    #         # User is not a member of the team, so they can't be admin.
+    #         pass
 
     if not is_authorized:
         messages.error(request, "You do not have permission to delete this goal.")
         return redirect('dashboard:dashboard_view')
-    # ---------------------------
-
-    if request.method == 'POST':
-        # Deleting a Goal automatically deletes associated TimeLogs (due to CASCADE)
+    else:
         goal_title = goal.title
         goal.delete()
         messages.success(request, f"Goal '{goal_title}' has been successfully deleted.")
         return redirect('dashboard:dashboard_view')
 
-    # If GET request, show confirmation page (optional, but good practice)
-    context = {
-        'goal': goal,
-        'page_title': f'Confirm Deletion: {goal.title}'
-    }
-    return render(request, 'dashboard/goal_confirm_delete.html', context)
+    # ---------------------------
+
+    # if request.method == 'POST':
+    #     # Deleting a Goal automatically deletes associated TimeLogs (due to CASCADE)
+    #     goal_title = goal.title
+    #     goal.delete()
+    #     messages.success(request, f"Goal '{goal_title}' has been successfully deleted.")
+    #     return redirect('dashboard:dashboard_view')
+
+    # # If GET request, show confirmation page (optional, but good practice)
+    # # context = {
+    # #     'goal': goal,
+    # #     'page_title': f'Confirm Deletion: {goal.title}'
+    # # }
+    # return render(request, 'dashboard:dashboard_view')
 
 # @login_required
 # def time_log_view(request, goal_id):
@@ -304,94 +328,98 @@ def time_log_view(request, goal_id):
     }
     return render(request, 'dashboard/time_log_form.html', context)
 
-@login_required
-def time_log_edit_view(request, log_id):
-    """
-    Handles editing an existing TimeLog entry.
-    Requires complex logic to subtract old time and add new time to the parent Goal.
-    """
-    # Get the existing log and ensure it belongs to the user
-    log_instance = get_object_or_404(TimeLog, pk=log_id, user=request.user)
-    goal = log_instance.goal # Parent Goal
+# @login_required
+# def time_log_edit_view(request, log_id):
+#     """
+#     Handles editing an existing TimeLog entry.
+#     Requires complex logic to subtract old time and add new time to the parent Goal.
+#     """
+#     # Get the existing log and ensure it belongs to the user
+#     log_instance = get_object_or_404(TimeLog, pk=log_id, user=request.user)
+#     goal = log_instance.goal # Parent Goal
     
-    if request.method == 'POST':
-        form = TimeLogForm(request.POST, instance=log_instance)
-        if form.is_valid():
-            # Old time logged, before form save
-            minutes_old = log_instance.minutes
-            minutes_new = form.cleaned_data['minutes']
+#     if request.method == 'POST':
+#         form = TimeLogForm(request.POST, instance=log_instance)
+#         if form.is_valid():
+#             # Old time logged, before form save
+#             minutes_old = log_instance.minutes
+#             minutes_new = form.cleaned_data['minutes']
             
-            # Calculate the difference in time to adjust the Goal total
-            minutes_delta = minutes_new - minutes_old
-            time_delta = timedelta(minutes=minutes_delta)
+#             # Calculate the difference in time to adjust the Goal total
+#             minutes_delta = minutes_new - minutes_old
+#             time_delta = timedelta(minutes=minutes_delta)
 
-            with transaction.atomic():
-                # 1. Update the Goal's total time atomically
-                Goal.objects.filter(pk=goal.id).update(
-                    real_time=F('real_time') + time_delta
-                )
+#             with transaction.atomic():
+#                 # 1. Update the Goal's total time atomically
+#                 Goal.objects.filter(pk=goal.id).update(
+#                     real_time=F('real_time') + time_delta
+#                 )
                 
-                # 2. Save the updated TimeLog instance
-                form.save()
+#                 # 2. Save the updated TimeLog instance
+#                 form.save()
 
-                # 3. Re-check for goal completion
-                goal.refresh_from_db()
-                if goal.real_time >= goal.target_time and not goal.completed:
-                    goal.completed = True
-                    goal.save(update_fields=['completed'])
-                    messages.success(request, f"Goal '{goal.title}' completed after log update!")
+#                 # 3. Re-check for goal completion
+#                 goal.refresh_from_db()
+#                 if goal.real_time >= goal.target_time and not goal.completed:
+#                     goal.completed = True
+#                     goal.save(update_fields=['completed'])
+#                     messages.success(request, f"Goal '{goal.title}' completed after log update!")
 
-                messages.success(request, f"Time log updated from {minutes_old}m to {minutes_new}m.")
-                return redirect('dashboard:dashboard_view')
-    else:
-        form = TimeLogForm(instance=log_instance)
+#                 messages.success(request, f"Time log updated from {minutes_old}m to {minutes_new}m.")
+#                 return redirect('dashboard:dashboard_view')
+#     else:
+#         form = TimeLogForm(instance=log_instance)
     
-    context = {
-        'form': form,
-        'goal': goal,
-        'page_title': f'Edit Log: {log_instance}'
-    }
-    return render(request, 'dashboard/time_log_form.html', context)
+#     context = {
+#         'form': form,
+#         'goal': goal,
+#         'page_title': f'Edit Log: {log_instance}'
+#     }
+#     return render(request, 'dashboard/time_log_form.html', context)
 
-@login_required
-@transaction.atomic # Ensure Goal update and Log deletion happen together
-def time_log_delete_view(request, log_id):
-    """
-    Handles deletion of a TimeLog entry. Atomically subtracts time from the parent Goal.
-    """
-    # Get the existing log and ensure it belongs to the user
-    log_instance = get_object_or_404(TimeLog, pk=log_id, user=request.user)
-    goal = log_instance.goal # Parent Goal
-    minutes_to_subtract = log_instance.minutes
-    time_to_subtract = timedelta(minutes=minutes_to_subtract)
+# @login_required
+# @require_POST
+# @transaction.atomic # Ensure Goal update and Log deletion happen together
+# def time_log_delete_view(request, log_id):
+#     """
+#     Handles deletion of a TimeLog entry via an AJAX request.
+#     Atomically subtracts time from the parent Goal and returns JSON.
+#     """
+#     try:
+#         # 3. Get the log and ensure it belongs to the user
+#         log_instance = get_object_or_404(TimeLog, pk=log_id, user=request.user)
+#         goal = log_instance.goal
+#         minutes_to_subtract = log_instance.minutes
+#         time_to_subtract = timedelta(minutes=minutes_to_subtract)
 
-    if request.method == 'POST':
-        # 1. Atomically subtract the time from the Goal's total
-        Goal.objects.filter(pk=goal.id).update(
-            real_time=F('real_time') - time_to_subtract
-        )
+#         # 4. Atomically subtract the time from the Goal's total
+#         Goal.objects.filter(pk=goal.id).update(
+#             real_time=F('real_time') - time_to_subtract
+#         )
         
-        # 2. Delete the TimeLog
-        log_instance.delete()
+#         # 5. Delete the TimeLog
+#         log_instance.delete()
         
-        # 3. If goal was completed, check if it should now be incomplete
-        goal.refresh_from_db()
-        if goal.completed and goal.real_time < goal.target_time:
-            goal.completed = False
-            goal.save(update_fields=['completed'])
-            messages.warning(request, f"Goal '{goal.title}' is now incomplete after log removal.")
+#         # 6. Check/update completed status
+#         goal.refresh_from_db()
+#         goal_is_now_incomplete = False
+#         if goal.completed and goal.real_time < goal.target_time:
+#             goal.completed = False
+#             goal.save(update_fields=['completed'])
+#             goal_is_now_incomplete = True
 
-        messages.success(request, f"Time log of {minutes_to_subtract} minutes deleted.")
-        return redirect('dashboard:dashboard_view')
+#         # 7. Return a JSON response instead of redirecting
+#         return JsonResponse({
+#             'status': 'success',
+#             'message': f"Log of {minutes_to_subtract} minutes deleted.",
+#             'goal_was_affected': goal_is_now_incomplete,
+#         })
 
-    # Confirmation page on GET request
-    context = {
-        'log_instance': log_instance,
-        'goal': goal,
-        'page_title': f'Confirm Deletion of Time Log: {log_instance.minutes}m'
-    }
-    return render(request, 'dashboard/time_log_confirm_delete.html', context)
-
+#     except TimeLog.DoesNotExist:
+#         return JsonResponse({'status': 'error', 'message': 'Log not found.'}, status=404)
+#     except Exception as e:
+#         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
 # @login_required
 # def goal_reflection_fragment_view(request, goal_id): # Renamed function
 #     """
