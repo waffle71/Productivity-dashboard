@@ -15,17 +15,10 @@
     
 </head>
 <body>
-    {% if messages %}
-        <ul class="messages">
-            {% for message in messages %}
-                <li class="{% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
+    {% block content %}
+    {% endblock %}
 
-    <main>
-        {% block content %}
-        {% endblock %}
-    </main>
+    {% block extra_js %}
+    {% endblock %}
 </body>
 </html>
