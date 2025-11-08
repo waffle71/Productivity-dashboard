@@ -5,7 +5,7 @@ from django.core.paginator import Paginator
 from django.db import transaction, IntegrityError # Important for ensuring both save operations succeed
 from django.db.models import Q, Count, Exists, OuterRef, Sum
 from django.db.models.functions import Coalesce
-from .forms import TeamForm, TeamGoalForm
+from .forms import TeamForm, TeamGoalForm, TeamTimeLogForm
 from .models import TeamMember, Team, TeamGoal, TeamTimeLog
 from dashboard.models import Goal
 from users.decorators import admin_required
@@ -460,3 +460,49 @@ def team_join_view(request, team_id):
     except Exception as e:
         messages.error(request, f"Failed to join team: {e}")
         return redirect('teams:team_list')
+    
+@login_required
+def team_time_log_create_view(request, team_id, goal_id):
+    """
+    Handles logging time for a specific team goal.
+    User must be a member of the team.
+    """
+    team = get_object_or_404(Team, pk=team_id)
+    goal = get_object_or_404(TeamGoal, pk=goal_id, team=team) # Ensure goal belongs to team
+
+    # --- Security Check: User must be a Member ---
+    if not TeamMember.objects.filter(user=request.user, team=team).exists():
+        messages.error(request, "You are not a member of this team.")
+        return redirect('dashboard:dashboard_view') # Or your main dashboard
+    # --- End Security Check ---
+
+    if request.method == 'POST':
+        form = TeamTimeLogForm(request.POST)
+        if form.is_valid():
+            log = form.save(commit=False)
+            log.user = request.user  # Set the user
+            log.goal = goal          # Set the goal
+            log.save()
+            
+            # This is important! Your dashboard view already calculates the sum
+            # of logs, but if you have a 'real_time' field on the goal,
+            # you would update it here.
+            # E.g.:
+            # goal.real_time += timedelta(minutes=log.minutes)
+            # goal.save()
+            
+            messages.success(request, f"Successfully logged {log.minutes} minutes for '{goal.title}'.")
+            return redirect('teams:team_dashboard', team_id=team.id)
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        # GET request
+        form = TeamTimeLogForm()
+
+    context = {
+        'page_title': f'Log Time for: {goal.title}',
+        'form': form,
+        'team': team,
+        'goal': goal
+    }
+    return render(request, 'teams/team_time_log_form.html', context)

@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from datetime import timedelta
@@ -98,7 +99,7 @@ class TeamTimeLog(models.Model):
         related_name='team_time_logs'
     )
     created_at = models.DateTimeField(auto_now_add=True)
-    log_date = models.DateField(auto_now_add=True)
+    log_date = models.DateField(default=timezone.now)
     notes = models.TextField(blank=True, null=True, help_text="Optional notes about this time log")
     minutes = models.IntegerField(
         validators=[MinValueValidator(1)],

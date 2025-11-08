@@ -1,7 +1,7 @@
 # In teams/forms.py (New File)
 
 from django import forms
-from .models import Team, TeamGoal
+from .models import Team, TeamGoal, TeamTimeLog
 from datetime import timedelta
 from django.core.exceptions import ValidationError
 from .models import Team
@@ -76,4 +76,31 @@ class TeamGoalForm(forms.ModelForm):
         
         help_texts = {
             'target_time': 'Enter duration (e.g., "10 days", "20:00:00" for 20 hours, or "1:30:00" for 90 minutes).'
+        }
+
+class TeamTimeLogForm(forms.ModelForm):
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        common_classes = 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
+        
+        self.fields['log_date'].widget.attrs.update({'class': common_classes})
+        self.fields['minutes'].widget.attrs.update({'class': common_classes, 'type': 'number', 'min': 1})
+        self.fields['notes'].widget.attrs.update({'class': common_classes, 'rows': 3})
+
+    class Meta:
+        model = TeamTimeLog
+        # These are the fields the user will fill out.
+        # 'user' and 'goal' will be set automatically by the view.
+        fields = ['log_date', 'minutes', 'notes']
+        
+        widgets = {
+            'log_date': forms.DateInput(attrs={'type': 'date'}),
+        }
+        
+        labels = {
+            'log_date': 'Date of Work',
+            'minutes': 'Minutes Logged',
+            'notes': 'Notes (What did you do?)'
         }
