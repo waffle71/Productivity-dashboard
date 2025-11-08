@@ -89,18 +89,42 @@ class TimeLogForm(forms.ModelForm):
     """
     Form for logging time spent on a goal.
     """
+    minutes = forms.FloatField(
+        label='Time Spent (in minutes)',
+        min_value=1.0,
+        widget=forms.NumberInput(attrs={
+            'min': 1, 
+            'step': 0.1, 
+            'placeholder': 'Enter minutes logged (e.g., 90.5)'
+            })
+    )
+
+    log_date = forms.DateField(
+        label='Date Logged',
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+
     class Meta:
         model = TimeLog
-        fields = ('minutes',)
-        labels = {
-            'minutes': 'Time Spent (in minutes)',
-        }
-        widgets = {
-            'minutes': forms.NumberInput(attrs={'min': 1, 'placeholder': 'Enter minutes logged'})
-        }
+        # Note: We exclude 'duration' here, as we calculate it in the view
+        # or handle it in the clean method before saving.
+        # We include the log_date which is now defined above.
+        fields = ('minutes', 'log_date',) 
 
     def clean_minutes(self):
         minutes = self.cleaned_data.get('minutes')
+        # This form field already has min_value=1.0, but this is a redundant safety check
         if minutes is not None and minutes <= 0:
             raise forms.ValidationError("Time logged must be at least 1 minute.")
         return minutes
+    
+    def save(self, commit=True):
+        """
+        Ensure 'minutes' is saved as an integer if the model field expects it.
+        """
+        instance = super().save(commit=False)
+        # Convert float to int safely (e.g., 90.5 → 90)
+        instance.minutes = int(round(self.cleaned_data['minutes']))
+        if commit:
+            instance.save()
+        return instance

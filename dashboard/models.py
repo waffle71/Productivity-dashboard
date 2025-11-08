@@ -31,6 +31,7 @@ class Goal(models.Model):
         
     completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(null=True)
     # Stored as a string like '1111100' (Mon-Fri) 
     days_of_the_week = models.CharField(max_length=7, blank=True) 
     
@@ -57,8 +58,9 @@ class TimeLog(models.Model):
         on_delete=models.CASCADE, 
         related_name='time_logs'
     )
-    log_date = models.DateField(auto_now_add=True)
+    log_date = models.DateField()
     minutes = models.IntegerField(help_text="Time spent in minutes for this log")
-
+    created_at = models.DateTimeField(auto_now_add=True)
+    
     def __str__(self):
         return f"{self.minutes} minutes for {self.goal.title} on {self.log_date}"
