@@ -46,7 +46,7 @@
                         {{ task_form.assigned_to }}
                         {{ task_form.due_date }}
                     </div>
-                    <button type"submit" name="submit_task" class="button button-primary w-full mt-3">Add Task</button>
+                    <button type="submit" name="submit_task" class="button button-primary w-full mt-3">Add Task</button>
                 </form>
 
                 <!-- Task List -->
@@ -54,9 +54,17 @@
                     {% for task in tasks %}
                         <div class="flex items-center justify-between p-3 border-b last:border-b-0">
                             <div>
-                                <input type="checkbox" class="rounded text-indigo-600" {% if task.completed %}checked{% endif %}>
-                                <span class="ml-2 text-gray-800 {% if task.completed %}line-through{% endif %}">
-                                    {{ task.title }}
+                                <input type="checkbox" 
+                                        class="rounded text-indigo-600 task-checkbox" 
+                                        data-task-id="{{ task.id }}"
+                                        {% if task.completed %}checked{% endif %}
+                                        {% if current_user_role != 'ADMIN' and request.user != task.assigned_to %}
+                                            disabled
+                                            title="Only admins or the assigned user can complete this task."
+                                        {% endif %}        
+                                >
+                                <span class="ml-2 text-gray-800 {% if task.completed %}line-through{% endif %}"
+                                    id="task-title-{{ task.id }}">  {{ task.title }}
                                 </span>
                             </div>
                             <div class="text-sm text-gray-500">
@@ -106,4 +114,53 @@
 
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // This function gets the CSRF token from your form
+    function getCSRFToken() {
+        return document.querySelector('form input[name="csrfmiddlewaretoken"]').value;
+    }
+
+    // Wait for the page to load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Find all the task checkboxes
+        const checkboxes = document.querySelectorAll('.task-checkbox');
+        
+        checkboxes.forEach(checkbox => {
+            // Add a 'click' event listener to each one
+            checkbox.addEventListener('click', (e) => {
+                const taskId = e.target.dataset.taskId;
+                const url = `/teams/task/${taskId}/toggle/`; // The URL we just made
+
+                // Send the request to the server
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken() // Include the token
+                    },
+                    // No body is needed, the view just toggles
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // It worked! Find the text and toggle the 'line-through' class
+                        const titleSpan = document.getElementById(`task-title-${taskId}`);
+                        titleSpan.classList.toggle('line-through', data.completed);
+                    } else {
+                        // It failed. Log the error and un-check the box
+                        console.error('Error:', data.message);
+                        e.target.checked = !e.target.checked; // Revert the click
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    e.target.checked = !e.target.checked; // Revert the click
+                });
+            });
+        });
+    });
+</script>
 {% endblock %}
