@@ -16,6 +16,11 @@
 <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
     
     <div class="dashboard-header mb-8 p-6 bg-white rounded-xl shadow-lg">
+        <p class="text-sm font-medium text-indigo-600">
+            <a href="{% url 'dashboard:dashboard_view' %}" class="hover:underline">
+                &larr; Back to My Dashboard
+            </a>
+        </p>
         <h2 class="text-3xl font-extrabold text-gray-900">
             <svg class="w-10 h-10 inline-block mr-2 -mt-1 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20v-2c0-.656-.126-1.283-.356-1.857M17 20v-2c0-.656-.126-1.283-.356-1.857M10 12l2-1m-2 1l-2-1m-2 1h-2a2 2 0 00-2 2v2a2 2 0 002 2h6m-4-6h4m-4 0v2m2-2h-2m2 0v2m2-2h-2m2 0v2m2-2h-2m2 0v2"></path></svg>
             {{ team.team_name }}

@@ -1,12 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import JsonResponse
 from django.core.paginator import Paginator
+from django.views.decorators.http import require_POST
 from django.db import transaction, IntegrityError # Important for ensuring both save operations succeed
 from django.db.models import Q, Count, Exists, OuterRef, Sum
 from django.db.models.functions import Coalesce
 from .forms import TeamForm, TeamGoalForm, TeamTimeLogForm, TeamTaskForm, TeamGoalCommentForm
-from .models import TeamMember, Team, TeamGoal, TeamTimeLog
+from .models import TeamMember, Team, TeamGoal, TeamTimeLog, TeamTask
 from dashboard.models import Goal
 from users.decorators import admin_required
 from users.models import CustomUser
@@ -77,7 +79,11 @@ def team_goal_detail_view(request, team_id, goal_id):
     goal = get_object_or_404(TeamGoal, pk=goal_id, team=team)
 
     # --- Security Check: User must be a Member ---
-    if not TeamMember.objects.filter(user=request.user, team=team).exists():
+    try:
+        # Get the user's membership instance for this team
+        member_instance = TeamMember.objects.get(user=request.user, team=team)
+        current_user_role = member_instance.role  # Get the role (e.g., 'ADMIN' or 'MEMBER')
+    except TeamMember.DoesNotExist:
         messages.error(request, "You are not a member of this team.")
         return redirect('dashboard:dashboard_view')
     # --- End Security Check ---
@@ -139,7 +145,8 @@ def team_goal_detail_view(request, team_id, goal_id):
             'logged_minutes': logged,
             'target_minutes': target,
             'percentage': percentage
-        }
+        },
+        'current_user_role': current_user_role,
     }
     return render(request, 'teams/team_goal_detail.html', context)
 
@@ -531,3 +538,35 @@ def team_time_log_create_view(request, team_id, goal_id):
         'goal': goal
     }
     return render(request, 'teams/team_time_log_form.html', context)
+
+@require_POST  # This view only accepts POST requests
+@login_required
+def team_task_toggle_complete(request, task_id):
+    """
+    Toggles the 'completed' status of a single TeamTask.
+    """
+    try:
+        # Get the task object
+        task = get_object_or_404(TeamTask, pk=task_id)
+        
+        # --- Security Check ---
+        # Get the team from the task's goal
+        team = task.goal.team
+        # Check if the logged-in user is a member of that team
+        if not TeamMember.objects.filter(user=request.user, team=team).exists():
+            return JsonResponse({'status': 'error', 'message': 'Not authorized'}, status=403)
+        # --- End Security Check ---
+
+        # Toggle the 'completed' status
+        task.completed = not task.completed
+        task.save()
+        
+        # Send a success response back to the JavaScript
+        return JsonResponse({
+            'status': 'success',
+            'completed': task.completed,
+            'message': 'Task status updated.'
+        })
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

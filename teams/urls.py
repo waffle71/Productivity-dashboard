@@ -25,9 +25,11 @@ urlpatterns = [
 
     path('<int:team_id>/goal/<int:goal_id>/', views.team_goal_detail_view, name='team_goal_detail'),
 
+    path('task/<int:task_id>/toggle/', views.team_task_toggle_complete, name='team_task_toggle'),
     # New URL for the Admin Dashboard
     path('admin/dashboard/', views.admin_dashboard_view, name='admin_dashboard'),
     
+
     # New path for User Management
     path('admin/users/', views.user_management_view, name='user_management'),
 

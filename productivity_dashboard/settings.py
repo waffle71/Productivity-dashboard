@@ -71,6 +71,11 @@ TEMPLATES = [
         },
     },
 ]
+# The URL name to redirect to after a successful login
+LOGIN_REDIRECT_URL = 'dashboard:dashboard_view'
+
+# The URL name to redirect to after a logout
+LOGOUT_REDIRECT_URL = 'login'
 
 STATICFILES_DIRS = [
     BASE_DIR / 'static',

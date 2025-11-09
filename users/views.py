@@ -44,11 +44,3 @@ def login_view(request):
             messages.error(request, "Invalivd username or password")
     form = AuthenticationForm()
     return render(request, "users/login.html", context={"form": form})
-
-def logout_view(request):
-    """
-    Handle user logout.
-    """
-    logout(request)
-    messages.info(request, "You have successfully logged out.")
-    return redirect("users:login")
