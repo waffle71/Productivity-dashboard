@@ -31,6 +31,7 @@ urlpatterns = [
     #path('register/', include('users.urls')), # Or wherever your register page is
     path('dashboard/', include('dashboard.urls', namespace='dashboard')),
     path('teams/', include('teams.urls', namespace='teams')),
+    path('notification/<int:notification_id>/read/', user_views.mark_notification_as_read, name='notification-read'),
     # You already have this, which is great!
 
 ]
