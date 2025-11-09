@@ -11,23 +11,28 @@ def send_notification_on_join(sender, instance, created, **kwargs):
     When a new TeamMember is created, send a notification
     to all admins of that team.
     """
-    # 'instance' is the new TeamMember object that was saved
+    
+    # 2. ADD A PRINT STATEMENT FOR DEBUGGING
+    # This will show up in your 'runserver' console
+    print(f"--- TeamMember save signal fired! Created: {created} ---")
+
     new_member_instance = instance
     
-    # We only care about NEWLY created memberships,
-    # AND only when a new 'MEMBER' joins (not the admin creating the team).
+    # 3. USE THE CORRECT CLASS ATTRIBUTE
+    # Use 'TeamMember.Role.MEMBER', not 'TeamMember.Role'
     if created and new_member_instance.role == TeamMember.Role.MEMBER:
+        
+        print(f"--- New member {new_member_instance.user.username} joined. Notifying admins... ---")
         
         team = new_member_instance.team
         new_user = new_member_instance.user
         
-        # 1. Find all admins for this team
+        # Find all admins
         admins = TeamMember.objects.filter(
             team=team, 
             role=TeamMember.Role.ADMIN
         )
         
-        # 2. Create the message and link
         message_body = (
             f"'{new_user.username}' has joined your team: '{team.team_name}'."
         )
@@ -36,13 +41,13 @@ def send_notification_on_join(sender, instance, created, **kwargs):
             args=[team.id]
         )
 
-        # 3. Create a notification for each admin
         for admin_member in admins:
-            # Admins don't need to be notified that a new member joined
-            # if they were the one who added them (this is a good check)
-            # But for a simple "join" button, this is fine.
-            Notification.objects.create(
-                user=admin_member.user,
-                message=message_body,
-                link=notification_link
-            )
+            # 4. LOGIC IMPROVEMENT
+            # Don't notify the new user if they somehow joined as an admin
+            if admin_member.user != new_user:
+                Notification.objects.create(
+                    user=admin_member.user,
+                    message=message_body,
+                    link=notification_link
+                )
+                print(f"--- Sent notification to {admin_member.user.username} ---")
