@@ -1,12 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import JsonResponse
 from django.core.paginator import Paginator
+from django.views.decorators.http import require_POST
 from django.db import transaction, IntegrityError # Important for ensuring both save operations succeed
 from django.db.models import Q, Count, Exists, OuterRef, Sum
 from django.db.models.functions import Coalesce
-from .forms import TeamForm, TeamGoalForm
-from .models import TeamMember, Team, TeamGoal, TeamTimeLog
+from .forms import TeamForm, TeamGoalForm, TeamTimeLogForm, TeamTaskForm, TeamGoalCommentForm
+from .models import TeamMember, Team, TeamGoal, TeamTimeLog, TeamTask
 from dashboard.models import Goal
 from users.decorators import admin_required
 from users.models import CustomUser
@@ -67,12 +69,86 @@ def team_create_view(request):
     
 # Placeholder for the team detail view (needed for the redirect above)
 @login_required
-def team_detail_view(request, team_id):
-    # Retrieve the team and ensure the user is a member
-    team = get_object_or_404(request.user.teams, pk=team_id)
-    # You would pass team goals, member list, etc., here.
-    context = {'team': team}
-    return render(request, 'teams/team_detail.html', context)
+def team_goal_detail_view(request, team_id, goal_id):
+    """
+    Displays the detail view for a single Team Goal,
+    including its tasks and comments.
+    Also handles submitting new tasks and comments.
+    """
+    team = get_object_or_404(Team, pk=team_id)
+    goal = get_object_or_404(TeamGoal, pk=goal_id, team=team)
+
+    # --- Security Check: User must be a Member ---
+    try:
+        # Get the user's membership instance for this team
+        member_instance = TeamMember.objects.get(user=request.user, team=team)
+        current_user_role = member_instance.role  # Get the role (e.g., 'ADMIN' or 'MEMBER')
+    except TeamMember.DoesNotExist:
+        messages.error(request, "You are not a member of this team.")
+        return redirect('dashboard:dashboard_view')
+    # --- End Security Check ---
+
+    # --- Form Handling ---
+    if request.method == 'POST':
+        # Check which form was submitted
+        
+        # 1. Check for a new task
+        if 'submit_task' in request.POST:
+            task_form = TeamTaskForm(team=team, data=request.POST) # Pass team!
+            if task_form.is_valid():
+                task = task_form.save(commit=False)
+                task.goal = goal
+                task.save()
+                messages.success(request, f"New task '{task.title}' added.")
+            else:
+                messages.error(request, "Error adding task. Please check the form.")
+        
+        # 2. Check for a new comment
+        elif 'submit_comment' in request.POST:
+            comment_form = TeamGoalCommentForm(request.POST)
+            if comment_form.is_valid():
+                comment = comment_form.save(commit=False)
+                comment.goal = goal
+                comment.user = request.user
+                comment.save()
+                messages.success(request, "Your comment was added.")
+            else:
+                messages.error(request, "Error adding comment.")
+        
+        # Always redirect after a POST to prevent re-submission
+        return redirect('teams:team_goal_detail', team_id=team.id, goal_id=goal.id)
+
+    # --- GET Request Logic ---
+    # Get all related items
+    tasks = goal.tasks.all().select_related('assigned_to')
+    comments = goal.comments.all().select_related('user')
+    
+    # Create blank forms
+    # We must pass the 'team' so the form can filter the assignee dropdown
+    task_form = TeamTaskForm(team=team) 
+    comment_form = TeamGoalCommentForm()
+    
+    # We can re-use the progress calculation from the dashboard view
+    logged = goal.time_logs.all().aggregate(total=Coalesce(Sum('minutes'), 0))['total']
+    target = goal.target_minutes
+    percentage = (logged / target) * 100 if target > 0 else 0
+
+    context = {
+        'page_title': goal.title,
+        'team': team,
+        'goal': goal,
+        'tasks': tasks,
+        'comments': comments,
+        'task_form': task_form,
+        'comment_form': comment_form,
+        'progress': {
+            'logged_minutes': logged,
+            'target_minutes': target,
+            'percentage': percentage
+        },
+        'current_user_role': current_user_role,
+    }
+    return render(request, 'teams/team_goal_detail.html', context)
 
 @login_required
 def team_goal_create_view(request, team_id):
@@ -389,50 +465,6 @@ def team_list_view(request):
     }
     return render(request, "teams/team_list.html", context)
 
-# @login_required
-# def team_list_view(request):
-#     """
-#     Displays a list of all teams the user can join.
-#     """
-#     # # 1. Get IDs of all teams the user is currently a member of
-#     # member_of_teams_ids = TeamMember.objects.filter(
-#     #     user=request.user
-#     # ).values_list('team_id', flat=True)
-
-#     # # 2. Fetch all teams that the user is NOT a member of
-#     # joinable_teams = Team.objects.exclude(
-#     #     id__in=member_of_teams_ids
-#     # ).order_by('team_name')
-
-#     # context = {
-#     #     'page_title': 'Join an Existing Team',
-#     #     'joinable_teams': joinable_teams
-#     # }
-#     # 1. Fetch all teams
-#     all_teams = Team.objects.all().order_by('team_name')
-
-#     # 2. Get a quick lookup of teams the user is already a member of
-#     # This creates a set of team IDs for fast checking in the template/loop
-#     member_of_team_ids = set(
-#         TeamMember.objects.filter(user=request.user)
-#         .values_list('team_id', flat=True)
-#     )
-
-#     # 3. Create a list combining team data with membership status
-#     team_data = []
-#     for team in all_teams:
-#         is_member = team.id in member_of_team_ids
-#         team_data.append({
-#             'team': team,
-#             'is_member': is_member
-#         })
-
-#     context = {
-#         'page_title': 'Explore and Manage Teams',
-#         'all_team_data': team_data, # Renamed variable for clarity
-#     }
-#     return render(request, 'teams/team_list.html', context)
-
 @login_required
 def team_join_view(request, team_id):
     """
@@ -460,3 +492,81 @@ def team_join_view(request, team_id):
     except Exception as e:
         messages.error(request, f"Failed to join team: {e}")
         return redirect('teams:team_list')
+    
+@login_required
+def team_time_log_create_view(request, team_id, goal_id):
+    """
+    Handles logging time for a specific team goal.
+    User must be a member of the team.
+    """
+    team = get_object_or_404(Team, pk=team_id)
+    goal = get_object_or_404(TeamGoal, pk=goal_id, team=team) # Ensure goal belongs to team
+
+    # --- Security Check: User must be a Member ---
+    if not TeamMember.objects.filter(user=request.user, team=team).exists():
+        messages.error(request, "You are not a member of this team.")
+        return redirect('dashboard:dashboard_view') # Or your main dashboard
+    # --- End Security Check ---
+
+    if request.method == 'POST':
+        form = TeamTimeLogForm(request.POST)
+        if form.is_valid():
+            log = form.save(commit=False)
+            log.user = request.user  # Set the user
+            log.goal = goal          # Set the goal
+            log.save()
+            
+            # This is important! Your dashboard view already calculates the sum
+            # of logs, but if you have a 'real_time' field on the goal,
+            # you would update it here.
+            # E.g.:
+            # goal.real_time += timedelta(minutes=log.minutes)
+            # goal.save()
+            
+            messages.success(request, f"Successfully logged {log.minutes} minutes for '{goal.title}'.")
+            return redirect('teams:team_dashboard', team_id=team.id)
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        # GET request
+        form = TeamTimeLogForm()
+
+    context = {
+        'page_title': f'Log Time for: {goal.title}',
+        'form': form,
+        'team': team,
+        'goal': goal
+    }
+    return render(request, 'teams/team_time_log_form.html', context)
+
+@require_POST  # This view only accepts POST requests
+@login_required
+def team_task_toggle_complete(request, task_id):
+    """
+    Toggles the 'completed' status of a single TeamTask.
+    """
+    try:
+        # Get the task object
+        task = get_object_or_404(TeamTask, pk=task_id)
+        
+        # --- Security Check ---
+        # Get the team from the task's goal
+        team = task.goal.team
+        # Check if the logged-in user is a member of that team
+        if not TeamMember.objects.filter(user=request.user, team=team).exists():
+            return JsonResponse({'status': 'error', 'message': 'Not authorized'}, status=403)
+        # --- End Security Check ---
+
+        # Toggle the 'completed' status
+        task.completed = not task.completed
+        task.save()
+        
+        # Send a success response back to the JavaScript
+        return JsonResponse({
+            'status': 'success',
+            'completed': task.completed,
+            'message': 'Task status updated.'
+        })
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

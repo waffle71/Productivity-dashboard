@@ -1,8 +1,9 @@
 from django.db import models
+from django.utils import timezone
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from datetime import timedelta
-
+from dashboard.models import BaseTask
 # Create your models here.
 class Team(models.Model):
     """
@@ -98,7 +99,7 @@ class TeamTimeLog(models.Model):
         related_name='team_time_logs'
     )
     created_at = models.DateTimeField(auto_now_add=True)
-    log_date = models.DateField(auto_now_add=True)
+    log_date = models.DateField(default=timezone.now)
     notes = models.TextField(blank=True, null=True, help_text="Optional notes about this time log")
     minutes = models.IntegerField(
         validators=[MinValueValidator(1)],
@@ -107,3 +108,33 @@ class TeamTimeLog(models.Model):
 
     def __str__(self):
         return f"{self.user.username} logged {self.minutes}m for {self.goal.title}"
+    
+class TeamTask(BaseTask):
+    """
+    Represents a to-do item for a TeamGoal.
+    Inherits from dashboard.models.BaseTask.
+    """
+    goal = models.ForeignKey(
+        TeamGoal, 
+        on_delete=models.CASCADE, 
+        related_name='tasks'
+    )
+    # This field is specific to TeamTask
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='team_tasks'
+    )
+
+class TeamGoalComment(models.Model):
+    # ... (This is the model we designed in the previous step) ...
+    goal = models.ForeignKey(TeamGoal, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='team_comments')
+    body = models.TextField(help_text="The content of the comment")
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ['created_at']
+    def __str__(self):
+        return f"Comment by {self.user.username} on {self.goal.title}"
