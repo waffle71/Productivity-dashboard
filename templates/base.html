@@ -1,24 +1,128 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Site</title>
-    <style>
-       
-    </style>
+    
+    <title>{% block title %}Productivity Dashboard{% endblock %}</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     {% block extra_css %}{% endblock %}
-    
 </head>
-<body>
-    {% block content %}
-    {% endblock %}
+<body class="bg-gray-100 font-sans">
+
+    <nav class="bg-white shadow-md border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                
+                <div class="flex-shrink-0">
+                    <a href="{% url 'index' %}" class="text-2xl font-bold text-indigo-600">Productivity+</a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    {% if user.is_authenticated %}
+                    <div class="relative">
+                        <button id="notification-bell" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341A6.002 6.002 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                            </svg>
+                        </button>
+                        
+                        {% if unread_notification_count > 0 %}
+                        <span class="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
+                            {{ unread_notification_count }}
+                        </span>
+                        {% endif %}
+                        <div id="notification-dropdown" 
+                             class="hidden absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                            
+                            <div class="p-3 border-b border-gray-100">
+                                <h3 class="font-semibold text-gray-800">Notifications</h3>
+                            </div>
+                    
+                            <div class="max-h-60 overflow-y-auto">
+                                {% for notif in unread_notifications %}
+                                    <a href="{% url 'notification-read' notif.id %}" 
+                                       class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
+                                        {{ notif.message }}
+                                        <span class="block text-xs text-gray-500 mt-1">
+                                            {{ notif.created_at|timesince }} ago
+                                        </span>
+                                    </a>
+                                {% empty %}
+                                    <p class="p-4 text-sm text-gray-500">You have no unread notifications.</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        </div>
+                        <a href="{% url 'dashboard:dashboard_view' %}" class="text-gray-700 hover:text-indigo-600">Dashboard</a>
+                        <a href="{% url 'teams:team_list' %}" class="text-gray-700 hover:text-indigo-600">Teams</a>
+                        
+                        <span class="text-gray-300">|</span>
+                        
+                        <span class="text-gray-800 font-medium">Hello, {{ user.username }}</span>
+                        
+                        <form method="post" action="{% url 'logout' %}" class="flex items-center">
+                            {% csrf_token %}
+                            <button type="submit" class="ml-2 button button-secondary-danger text-sm">
+                                Logout
+                            </button>
+                        </form>
+                
+                    {% else %}
+                        <a href="{% url 'login' %}" class="button button-primary">Login</a>
+                        <a href="{% url 'register' %}" class="button button-secondary">Sign Up</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    {% if messages %}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        {% for message in messages %}
+        <div class="p-4 rounded-md 
+            {% if message.tags == 'success' %} bg-green-100 border border-green-300 text-green-800 
+            {% elif message.tags == 'error' %} bg-red-100 border border-red-300 text-red-800
+            {% else %} bg-blue-100 border border-blue-300 text-blue-800 
+            {% endif %}" 
+            role="alert">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="text-center py-4 mt-8 text-gray-500 text-sm">
+        &copy; {% now "Y" %} Productivity Dashboard
+    </footer>
 
     {% block extra_js %}
     {% endblock %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const bell = document.getElementById('notification-bell');
+            const dropdown = document.getElementById('notification-dropdown');
+            if (bell) {
+                bell.addEventListener('click', (e) => {
+                    // Toggle the 'hidden' class to show/hide the dropdown
+                    dropdown.classList.toggle('hidden');
+                });
+            }
+            // Optional: Close dropdown if user clicks outside
+            window.addEventListener('click', (e) => {
+                if (dropdown && !bell.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        });
+    </script>
 </body>
 </html>

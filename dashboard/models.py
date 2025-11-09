@@ -64,3 +64,27 @@ class TimeLog(models.Model):
     
     def __str__(self):
         return f"{self.minutes} minutes for {self.goal.title} on {self.log_date}"
+
+class BaseTask(models.Model):
+    title = models.CharField(max_length=255)
+    completed = models.BooleanField(default=False)
+    due_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        abstract = True # This model won't exist in the database
+        ordering = ['completed', 'created_at']
+
+    def __str__(self):
+        return self.title
+    
+class Task(BaseTask):
+    """
+    Represents a single to-do item for a user's personal Goal.
+    Inherits from BaseTask.
+    """
+    goal = models.ForeignKey(
+        Goal, # Your personal Goal model
+        on_delete=models.CASCADE,
+        related_name='tasks'
+    )
