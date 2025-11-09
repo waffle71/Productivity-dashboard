@@ -8,7 +8,20 @@ from teams.models import TeamMember
 from .models import Goal, TimeLog
 from .forms import GoalForm, TimeLogForm
 from datetime import timedelta, date
+from django.contrib.auth import views as auth_views
 
+def index_view(request):
+    """
+    Redirects the user to the dashboard if they are logged in,
+    or to the login page if they are not.
+    """
+    if request.user.is_authenticated:
+        # Redirect to your main dashboard's URL name
+        return redirect('dashboard:dashboard_view')
+    else:
+        # Redirect to your login page's URL name
+        return redirect('login')
+    
 @login_required
 def dashboard_view(request):
     # Fetch all personal goals for the logged-in user

@@ -27,7 +27,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -67,10 +66,16 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'users.context_processors.unread_notifications',
             ],
         },
     },
 ]
+# The URL name to redirect to after a successful login
+LOGIN_REDIRECT_URL = 'dashboard:dashboard_view'
+
+# The URL name to redirect to after a logout
+LOGOUT_REDIRECT_URL = 'login'
 
 STATICFILES_DIRS = [
     BASE_DIR / 'static',

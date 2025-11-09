@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-xl mx-auto py-8 px-4">
+    <div class="bg-white shadow-xl rounded-xl p-6 border border-gray-200">
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ page_title }}</h1>
+        
+        <p class="text-lg text-gray-700">
+            Are you sure you want to permanently delete the goal: 
+            <strong class="font-semibold text-red-600">"{{ goal.title }}"</strong>?
+        </p>
+        <p class="text-gray-600 mt-2">This action cannot be undone.</p>
+        
+        <form method="POST" class="mt-6">
+            {% csrf_token %}
+            
+            <div class="flex items-center gap-4">
+                <button type="submit" class="button button-danger">
+                    Yes, Delete This Goal
+                </button>
+                <a href="{% url 'teams:team_dashboard' team_id=team.id %}" class="button button-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+
+    <!-- Form Card -->
+    <div class="max-w-lg mx-auto bg-white shadow-xl rounded-xl p-8 border border-gray-200">
+
+        <!-- Header -->
+        <h2 class="text-3xl font-bold text-gray-900 mb-2">Log Time for:</h2>
+        <p class="text-2xl font-extrabold text-indigo-600 mb-6">{{ goal.title }}</p>
+        
+        <!-- Form -->
+        <!-- Updated 'action' URL to point to the correct team/goal -->
+        <form method="post" action="{% url 'teams:team_time_log_create' team_id=team.id goal_id=goal.id %}">
+            {% csrf_token %}
+
+            <!-- Generic Field Loop -->
+            {% for field in form %}
+            <div class="mb-5">
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ field.label }}
+                </label>
+                
+                {{ field }}
+                
+                {% if field.help_text %}
+                <p class="mt-1 text-xs text-gray-500">{{ field.help_text|safe }}</p>
+                {% endif %}
+                
+                {% for error in field.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endfor %}
+            
+            <!-- Non-field Errors -->
+            {% if form.non_field_errors %}
+                <div class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Submit Button -->
+            <button type="submit" 
+                    class="w-full mt-4 flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150">
+                Submit Time Log
+            </button>
+            
+            <!-- Back to Team Dashboard Link -->
+            <div class="mt-6 text-center">
+                <!-- Updated 'href' to go back to the team dashboard -->
+                <a href="{% url 'teams:team_dashboard' team_id=team.id %}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                    ← Back to Team Dashboard
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Styles from your example, with <textarea> added -->
+<style>
+    input[type="number"],
+    input[type="date"],
+    textarea {
+        display: block;
+        width: 100%;
+        padding: 0.75rem; /* p-3 equivalent */
+        border-radius: 0.5rem; /* rounded-lg equivalent */
+        border: 1px solid #d1d5db; /* border-gray-300 equivalent */
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm equivalent */
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    input[type="number"]:focus,
+    input[type="date"]:focus,
+    textarea:focus {
+        border-color: #4f46e5; /* indigo-600 equivalent */
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5); /* ring-indigo-500/50 equivalent */
+        outline: none;
+    }
+</style>
+{% endblock %}
