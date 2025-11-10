@@ -4,7 +4,6 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from datetime import timedelta
 from dashboard.models import BaseTask
-
 class Team(models.Model):
     """
     Represents a team.
