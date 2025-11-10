@@ -22,16 +22,12 @@ from users import views as user_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-
     path('', dashboard_views.index_view, name='index'),
-    
     path('login/', auth_views.LoginView.as_view(template_name='users/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('register/', user_views.register_view, name='register'),
-    #path('register/', include('users.urls')), # Or wherever your register page is
     path('dashboard/', include('dashboard.urls', namespace='dashboard')),
     path('teams/', include('teams.urls', namespace='teams')),
     path('notification/<int:notification_id>/read/', user_views.mark_notification_as_read, name='notification-read'),
-    # You already have this, which is great!
 
 ]

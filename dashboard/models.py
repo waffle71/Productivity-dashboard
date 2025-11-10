@@ -2,13 +2,10 @@ from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import timedelta
-
-# Create your models here.
-
 class Goal(models.Model):
     """
     Represents a user-created personal goal.
-    Based on the 'User created goals' schema 
+    Based on the 'Goal' schema 
     """
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
@@ -46,7 +43,7 @@ class Goal(models.Model):
 class TimeLog(models.Model):
     """
     Represents a single log of time spent on a personal goal.
-    Based on the 'Time_log' schema 
+    Based on the 'TimeLog' schema 
     """
     goal = models.ForeignKey(
         Goal, 
@@ -65,6 +62,7 @@ class TimeLog(models.Model):
     def __str__(self):
         return f"{self.minutes} minutes for {self.goal.title} on {self.log_date}"
 
+# Abstract base class for tasks
 class BaseTask(models.Model):
     title = models.CharField(max_length=255)
     completed = models.BooleanField(default=False)
@@ -78,11 +76,13 @@ class BaseTask(models.Model):
     def __str__(self):
         return self.title
     
+# Concrete model representing a task associated with a specific goal.   
 class Task(BaseTask):
     """
     Represents a single to-do item for a user's personal Goal.
-    Inherits from BaseTask.
+    Inherits common fields and behavior from BaseTask.
     """
+    # Foreign key linking this task to a Goal instance
     goal = models.ForeignKey(
         Goal, # Your personal Goal model
         on_delete=models.CASCADE,

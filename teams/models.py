@@ -4,11 +4,11 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from datetime import timedelta
 from dashboard.models import BaseTask
-# Create your models here.
+
 class Team(models.Model):
     """
     Represents a team.
-    Based on the 'Teams' schema 
+    Based on the 'Team' schema 
     """
     team_name = models.CharField(max_length=255)
     team_desc = models.TextField(blank=True, null=True, help_text="Description")
@@ -29,7 +29,7 @@ class Team(models.Model):
 class TeamMember(models.Model):
     """
     Links a user to a team and defines their role within that team.
-    This is the 'Team_members' table.
+    Based on the 'TeamMember' schema 
     """
     class Role(models.TextChoices):
         MEMBER = 'MEMBER', 'Member'
@@ -49,7 +49,7 @@ class TeamMember(models.Model):
 class TeamGoal(models.Model):
     """
     Represents a goal associated with a specific team.
-    Based on the 'Team goals' schema 
+    Based on the 'TeamGoal' schema 
     """
     team = models.ForeignKey(
         Team, 
@@ -86,7 +86,7 @@ class TeamGoal(models.Model):
 class TeamTimeLog(models.Model):
     """
     Represents a single log of time spent by a user on a team goal.
-    Based on the 'team_Time_log' schema 
+    Based on the 'TeamTimeLog' schema 
     """
     goal = models.ForeignKey(
         TeamGoal, 
@@ -119,7 +119,6 @@ class TeamTask(BaseTask):
         on_delete=models.CASCADE, 
         related_name='tasks'
     )
-    # This field is specific to TeamTask
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -129,7 +128,6 @@ class TeamTask(BaseTask):
     )
 
 class TeamGoalComment(models.Model):
-    # ... (This is the model we designed in the previous step) ...
     goal = models.ForeignKey(TeamGoal, on_delete=models.CASCADE, related_name='comments')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='team_comments')
     body = models.TextField(help_text="The content of the comment")
