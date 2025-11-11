@@ -76,7 +76,7 @@ class TeamGoalForm(forms.ModelForm):
         }
         # Help text for target_time field
         help_texts = {
-            'target_time': 'Enter duration (e.g., "10 days", "20:00:00" for 20 hours, or "1:30:00" for 90 minutes).'
+            'target_time': 'Enter duration (e.g. "20:00:00" for 20 hours, or "1:30:00" for 90 minutes).'
         }
 
 class TeamTimeLogForm(forms.ModelForm):

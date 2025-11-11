@@ -9,7 +9,7 @@ from django.db.models import Q, Count, Exists, OuterRef, Sum
 from django.db.models.functions import Coalesce
 from .forms import TeamForm, TeamGoalForm, TeamTimeLogForm, TeamTaskForm, TeamGoalCommentForm
 from .models import TeamMember, Team, TeamGoal, TeamTimeLog, TeamTask
-from dashboard.models import Goal
+from dashboard.models import PersonalGoal
 from users.decorators import admin_required
 from users.models import CustomUser
 
@@ -323,7 +323,7 @@ def team_member_tasks_view(request, team_id):
     ).values_list('user_id', flat=True)
     
     # Fetch all active goals for those members
-    member_goals = Goal.objects.filter(
+    member_goals = PersonalGoal.objects.filter(
         user_id__in=member_users,
         completed=False 
     ).select_related('user').order_by('user__username', 'end_date')
@@ -548,15 +548,20 @@ def team_task_toggle_complete(request, task_id):
     try:
         # Get the task object
         task = get_object_or_404(TeamTask, pk=task_id)
+        team = task.goal.team
         
         # --- Security Check ---
         # Get the team from the task's goal
-        team = task.goal.team
-        # Check if the logged-in user is a member of that team
-        if not TeamMember.objects.filter(user=request.user, team=team).exists():
-            return JsonResponse({'status': 'error', 'message': 'Not authorized'}, status=403)
+        try:
+            member = TeamMember.objects.get(user=request.user, team=team)
+            is_admin = member.role == TeamMember.Role.ADMIN
+        except TeamMember.DoesNotExist:
+            is_admin = False # Not even on the team
         # --- End Security Check ---
-
+        is_assigned = request.user == task.assigned_to
+        if not (is_admin or is_assigned):
+            return JsonResponse({'status': 'error', 'message': 'You are not authorized to modify this task.'}, status=403)
+        
         # Toggle the 'completed' status
         task.completed = not task.completed
         task.save()

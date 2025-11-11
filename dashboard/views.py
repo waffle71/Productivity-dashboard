@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 from django.db import transaction
-from .models import Goal, TimeLog
+from .models import PersonalGoal, PersonalTimeLog
 from .forms import GoalForm, TimeLogForm
 from datetime import timedelta, date
 
@@ -22,7 +22,7 @@ def index_view(request):
 @login_required
 def dashboard_view(request):
     # Fetch all personal goals for the logged-in user
-    user_goals = Goal.objects.filter(user=request.user).order_by('-created_at')
+    user_goals = PersonalGoal.objects.filter(user=request.user).order_by('-created_at')
     
     goals_with_progress = []
     completed_goals_count = 0
@@ -49,7 +49,7 @@ def dashboard_view(request):
         current_streak = 0
         
         # Get distinct log dates for this goal using .dates() for SQLite compatibility
-        goal_log_dates = TimeLog.objects.filter(
+        goal_log_dates = PersonalTimeLog.objects.filter(
             goal=goal
         ).dates('log_date', 'day') 
         logged_dates_set = set(goal_log_dates)
@@ -116,7 +116,7 @@ def goal_edit_view(request, goal_id):
     Handles the editing of an existing goal. Requires owner or team admin authorization.
     """
     # 1. Retrieve the goal instance
-    goal = get_object_or_404(Goal, pk=goal_id)
+    goal = get_object_or_404(PersonalGoal, pk=goal_id)
 
     # Authorization check
     is_authorized = False
@@ -167,7 +167,7 @@ def goal_delete_view(request, goal_id):
     """
     Handles deletion of a Goal. Checks for ownership/admin status before deleting.
     """
-    goal = get_object_or_404(Goal, pk=goal_id)
+    goal = get_object_or_404(PersonalGoal, pk=goal_id)
 
     # Authorization Check
     is_authorized = False
@@ -191,7 +191,7 @@ def time_log_view(request, goal_id):
     Handles logging time (Creation) for a specific goal.
     Updates the Goal's 'real_time' field atomically.
     """
-    goal = get_object_or_404(Goal, pk=goal_id, user=request.user)
+    goal = get_object_or_404(PersonalGoal, pk=goal_id, user=request.user)
 
     if request.method == 'POST':
         form = TimeLogForm(request.POST)
@@ -233,7 +233,7 @@ def goal_reflection_fragment(request, goal_id):
     This view is called via JavaScript (Fetch API).
     """
     # 1. Get the goal, ensuring it belongs to the logged-in user for security.
-    goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+    goal = get_object_or_404(PersonalGoal, id=goal_id, user=request.user)
     
     # 2. Get all related time logs, ordered most recent first.
     time_logs = goal.time_logs.all().order_by('-log_date', '-created_at')

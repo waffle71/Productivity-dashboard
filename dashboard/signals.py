@@ -2,10 +2,10 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db.models import F
 from datetime import timedelta 
-from .models import TimeLog, Goal
+from .models import PersonalTimeLog, PersonalGoal
 
 # Receiver function that listens for the post_save signal from the TimeLog model
-@receiver(post_save, sender=TimeLog)
+@receiver(post_save, sender=PersonalTimeLog)
 def update_goal_and_streak(sender, instance, created, **kwargs):
     """
     Observer/Receiver function triggered after a TimeLog is saved.
@@ -23,12 +23,12 @@ def update_goal_and_streak(sender, instance, created, **kwargs):
         duration_to_add = timedelta(minutes=instance.minutes)
         
         # Observer Action 1: Increment the Goal's real_time field by the new duration
-        Goal.objects.filter(pk=instance.goal_id).update(
+        PersonalGoal.objects.filter(pk=instance.goal_id).update(
             real_time=F('real_time') + duration_to_add
         )
         
         # Observer Action 2 (Optional): Check if the goal is now completed
-        goal = Goal.objects.only('real_time', 'target_time', 'completed').get(pk=instance.goal_id)
+        goal = PersonalGoal.objects.only('real_time', 'target_time', 'completed').get(pk=instance.goal_id)
         
         # If the goal has a target time, and the accumulated time meets or exceeds it,
         # and the goal hasn't already been marked completed, then mark it as completed

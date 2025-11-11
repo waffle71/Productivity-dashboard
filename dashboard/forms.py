@@ -2,7 +2,7 @@ from datetime import timedelta
 from django import forms
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from .models import Goal, TimeLog
+from .models import PersonalGoal, PersonalTimeLog
 
 # Choices for selecting active days of the week
 DAY_CHOICES = [
@@ -61,7 +61,7 @@ class GoalForm(forms.ModelForm):
     )
 
     class Meta:
-        model = Goal
+        model = PersonalGoal
         fields = (
             'title',
             'description',
@@ -167,7 +167,7 @@ class TimeLogForm(forms.ModelForm):
     )
 
     class Meta:
-        model = TimeLog
+        model = PersonalTimeLog
         # Exclude duration; it's handled elsewhere
         fields = ('minutes', 'log_date',) 
 

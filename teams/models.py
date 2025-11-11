@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from datetime import timedelta
-from dashboard.models import BaseTask
+from dashboard.models import BaseTask, BaseGoal, BaseTimeLog
 class Team(models.Model):
     """
     Represents a team.
@@ -45,47 +45,28 @@ class TeamMember(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.team.team_name} ({self.role})"
 
-class TeamGoal(models.Model):
+class TeamGoal(BaseGoal):
     """
     Represents a goal associated with a specific team.
-    Based on the 'TeamGoal' schema 
+    Inherits all common fields from BaseGoal.
     """
+    # Unique field for TeamGoal
     team = models.ForeignKey(
         Team, 
         on_delete=models.CASCADE, 
         related_name='team_goals'
     )
-    title = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
-    start_date = models.DateField()
-    end_date = models.DateField()
     
-    target_time = models.DurationField(
-        help_text="Target time for the whole team"
-    )
-    real_time = models.DurationField(
-        default=timedelta(seconds=0),
-        help_text="Actual time spent by the team"
-    )
-    completed = models.BooleanField(default=False)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        db_table = 'teams_teamgoal'
 
-    @property
-    def target_minutes(self):
-        """Converts the target_time DurationField into total minutes."""
-        if self.target_time:
-            # total_seconds() is the reliable way to get duration
-            return int(self.target_time.total_seconds() / 60)
-        return 0
-    
     def __str__(self):
         return f"Team Goal: {self.title} ({self.team.team_name})"
 
-class TeamTimeLog(models.Model):
+class TeamTimeLog(BaseTimeLog):
     """
     Represents a single log of time spent by a user on a team goal.
-    Based on the 'TeamTimeLog' schema 
+    Inherits from BaseTimeLog.
     """
     goal = models.ForeignKey(
         TeamGoal, 
@@ -97,13 +78,8 @@ class TeamTimeLog(models.Model):
         on_delete=models.CASCADE, 
         related_name='team_time_logs'
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    log_date = models.DateField(default=timezone.now)
-    notes = models.TextField(blank=True, null=True, help_text="Optional notes about this time log")
-    minutes = models.IntegerField(
-        validators=[MinValueValidator(1)],
-        help_text="Time spent in minutes for this log"
-    )
+    class Meta:
+        db_table = 'teams_teamtimelog'
 
     def __str__(self):
         return f"{self.user.username} logged {self.minutes}m for {self.goal.title}"
