@@ -42,8 +42,6 @@ def send_notification_on_join(sender, instance, created, **kwargs):
         )
 
         for admin_member in admins:
-            # 4. LOGIC IMPROVEMENT
-            # Don't notify the new user if they somehow joined as an admin
             if admin_member.user != new_user:
                 Notification.objects.create(
                     user=admin_member.user,
