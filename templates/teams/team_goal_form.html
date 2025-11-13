@@ -41,14 +41,21 @@
           </div>
         </div>
 
-        <div class="mb-5">
-          <label for="{{ form.target_time.id_for_label }}" class="block text-sm font-medium text-gray-700">Target Time</label>
-          {{ form.target_time }}
-          {% if form.target_time.help_text %}
-            <p class="text-xs text-gray-500 mt-1">{{ form.target_time.help_text }}</p>
-          {% endif %}
-          {% for err in form.target_time.errors %}<p class="text-sm text-red-600 mt-1">{{ err }}</p>{% endfor %}
-        </div>
+    <!-- Target Time -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">{{ form.target_hours.label }}</label>
+        {{ form.target_hours }}
+        <p class="text-xs text-gray-500 mt-1">{{ form.target_hours.help_text }}</p>
+        {% for err in form.target_hours.errors %}<p class="text-sm text-red-600 mt-1">{{ err }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">{{ form.target_minutes.label }}</label>
+        {{ form.target_minutes }}
+        <p class="text-xs text-gray-500 mt-1">{{ form.target_minutes.help_text }}</p>
+        {% for err in form.target_minutes.errors %}<p class="text-sm text-red-600 mt-1">{{ err }}</p>{% endfor %}
+      </div>
+    </div>
         
         <div class="pt-4 border-t border-gray-200">
             <button type="submit"

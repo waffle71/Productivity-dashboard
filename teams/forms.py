@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django import forms
 from django.contrib.auth import get_user_model
 from .models import Team, TeamGoal, TeamTimeLog, TeamGoalComment, TeamTask, TeamMember
@@ -54,6 +55,25 @@ class TeamForm(forms.ModelForm):
 
 class TeamGoalForm(forms.ModelForm):
     
+    target_hours = forms.IntegerField(
+    min_value=0,
+    initial=1,
+    label="Target Hours",
+    required=False,
+    help_text="How many hours do you plan to spend in total?",
+    widget=forms.NumberInput(attrs={"min": 0, "step": 1, "placeholder": "e.g., 10", "class": TW_INPUT})
+)
+
+    target_minutes = forms.IntegerField(
+        min_value=0,
+        max_value=59,
+        initial=0,
+        label="Target Minutes",
+        required=False,
+        help_text="Additional minutes (0–59).",
+        widget=forms.NumberInput(attrs={"min": 0, "max": 59, "step": 1, "placeholder": "e.g., 30", "class": TW_INPUT})
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
@@ -63,21 +83,47 @@ class TeamGoalForm(forms.ModelForm):
         self.fields['description'].widget.attrs.update({'class': common_classes, 'rows': 3})
         self.fields['start_date'].widget.attrs.update({'class': common_classes})
         self.fields['end_date'].widget.attrs.update({'class': common_classes})
-        self.fields['target_time'].widget.attrs.update({'class': common_classes})
+        self.fields['target_hours'].widget.attrs.update({'class': common_classes})
+        self.fields['target_minutes'].widget.attrs.update({'class': common_classes})
 
     class Meta:
         model = TeamGoal
-        fields = ['title', 'description', 'start_date', 'end_date', 'target_time']
+        fields = ['title', 'description', 'start_date', 'end_date']
         
         # Use date input widgets for date fields
         widgets = {
-            'start_date': forms.DateInput(attrs={'type': 'date'}),
-            'end_date': forms.DateInput(attrs={'type': 'date'}),
+            "title": forms.TextInput(attrs={"placeholder": "Goal name", "class": TW_INPUT}),
+            "description": forms.Textarea(attrs={"rows": 4, "placeholder": "Describe your goal…", "class": TW_TEXTAREA}),
+            "start_date": forms.DateInput(attrs={'type': 'date', 'class': TW_INPUT}),
+            "end_date": forms.DateInput(attrs={'type': 'date', 'class': TW_INPUT}),
         }
         # Help text for target_time field
         help_texts = {
             'target_time': 'Enter duration (e.g. "20:00:00" for 20 hours, or "1:30:00" for 90 minutes).'
         }
+    def clean(self):
+        cleaned = super().clean()
+
+        hours = cleaned.get("target_hours") or 0
+        minutes = cleaned.get("target_minutes") or 0
+
+        # Convert to timedelta
+        cleaned["target_time"] = timedelta(hours=hours, minutes=minutes)
+
+        return cleaned
+    def save(self, commit=True):
+        goal = super().save(commit=False)
+
+        # Convert hours + minutes into timedelta
+        hours = self.cleaned_data.get("target_hours") or 0
+        minutes = self.cleaned_data.get("target_minutes") or 0
+
+        goal.target_time = timedelta(hours=hours, minutes=minutes)
+
+        if commit:
+            goal.save()
+
+        return goal
 
 class TeamTimeLogForm(forms.ModelForm):
     
