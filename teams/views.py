@@ -131,7 +131,11 @@ def team_goal_detail_view(request, team_id, goal_id):
     # We can re-use the progress calculation from the dashboard view
     logged = goal.time_logs.all().aggregate(total=Coalesce(Sum('minutes'), 0))['total']
     target = goal.target_minutes
-    percentage = (logged / target) * 100 if target > 0 else 0
+    if target > 0:
+        percentage = min(100, int((logged / target)* 100))
+    else:
+        percentage = 0
+
 
     context = {
         'page_title': goal.title,
@@ -381,7 +385,9 @@ def team_dashboard_view(request, team_id):
         logged = goal.logged_minutes
         
         if target > 0:
-            percentage = (logged / target) * 100
+            percentage = min(100, int((logged / target)* 100))
+        else:
+            percentage = 0
             
         team_goals_with_progress.append({
             'goal': goal,

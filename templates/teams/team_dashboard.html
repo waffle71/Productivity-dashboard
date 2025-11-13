@@ -65,7 +65,7 @@
                     <p class="text-sm text-gray-500 mb-4 h-12 overflow-hidden">{{ item.goal.description|truncatechars:80 }}</p>
 
                     <div class="progress-bar-container w-full bg-gray-200 rounded-full h-3 mb-2">
-                        <div class="progress-bar h-3 rounded-full bg-indigo-600" style="width: {{ item.percentage }}%;"></div>
+                        <div class="progress-bar h-3 rounded-full bg-indigo-600" style="width: {{ item.percentage }}%; max-width: 100%;"></div>
                     </div>
                     <p class="text-xs font-medium text-indigo-700 mb-4">{{ item.percentage|floatformat:1 }}% Complete</p>
                     
