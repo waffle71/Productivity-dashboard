@@ -6,6 +6,7 @@ from django.db import transaction
 from .models import PersonalGoal, PersonalTimeLog
 from .forms import GoalForm, TimeLogForm
 from datetime import timedelta, date
+from users.decorators import admin_required
 
 def index_view(request):
     """
@@ -255,3 +256,5 @@ def goal_reflection_fragment(request, goal_id):
     
     # 4. Render the HTML fragment (not a full page)
     return render(request, 'dashboard/fragments/goal_reflection_fragment.html', context)
+
+

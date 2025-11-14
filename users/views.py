@@ -5,6 +5,8 @@ from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
 from .forms import CustomUserCreationForm
 from .models import Notification
+from users.decorators import admin_required
+from django.contrib.auth.forms import SetPasswordForm
 
 # Create your views here.
 def register_view(request):
@@ -70,3 +72,28 @@ def mark_notification_as_read(request, notification_id):
         return redirect(notification.link)
     else:
         return redirect('dashboard:dashboard_view')
+    
+@admin_required
+def admin_dashboard_view(request):
+    users = users.objects.all()
+    return render(request, 'users/admin_dashboard.html', {'users': users})
+
+@admin_required
+def admin_user_detail_view(request, user_id):
+    user = get_object_or_404(user, pk=user_id)
+    return render(request, 'users/admin_user_detail.html', {'user_obj': user})
+
+
+@admin_required
+def admin_change_password_view(request, user_id):
+    user = get_object_or_404(user, pk=user_id)
+    form = SetPasswordForm(user=user, data=request.POST or None)
+
+    if request.method == 'POST':
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Password updated.')
+            return redirect('admin_user_detail', user_id=user_id)
+    
+
+    return render(request, 'users/admin_change_password.html', {'form': form, 'user_obj': user})

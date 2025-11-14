@@ -1,0 +1,12 @@
+{% extends "base.html"}
+{% block content %}
+
+<h2>User: {{ user_obj.username}}</h2>
+<p>Email: {{ user_obj.email }}</p>
+<p>Full name: {{user_obj.first_name}} {{ user_obj.last_name }}</p>
+<p>Joined: {{ user_obj.date_joined }}</p>
+
+
+<a href="{% url 'admin_change_password' user_obj.id %}">Change Password</a>
+
+{% endblock %}
