@@ -58,7 +58,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 
                 {% for item in team_goals_list %}
-                <div class="goal-card bg-white p-6 rounded-xl border border-gray-200 shadow-md">
+                <div class="goal-card  p-6 rounded-xl border shadow-md {% if item.percentage >= 100 %}bg-green-200 border-green-300{%else %}bg-white border-gray-200{% endif %} ">
                     <a href="{% url 'teams:team_goal_detail' team_id=team.id goal_id=item.goal.id %}" class="block hover:text-indigo-600">
                         <h4 class="text-xl font-semibold text-gray-900 mb-3">{{ item.goal.title }}</h4>
                     </a>
