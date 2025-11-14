@@ -64,8 +64,8 @@
                     
                     <div class="grid grid-cols-2 gap-3 mb-4 text-sm text-gray-700">
                         <div class="p-2 bg-gray-50 rounded-lg">
-                            <span class="block font-bold">{{ item.goal.real_time|floatformat:1 }} / {{ item.goal.target_time|floatformat:1 }}</span>
-                            <span class="block text-xs text-gray-500">Time Logged (hrs)</span>
+                            <span class="block font-bold">{{ item.real_time_minutes|floatformat:0 }} / {{ item.target_time_minutes|floatformat:0 }}</span>
+                            <span class="block text-xs text-gray-500">Time Logged (Mins)</span>
                         </div>
                         <div class="p-2 bg-gray-50 rounded-lg">
                             <span class="block font-bold text-green-600">{{ item.current_streak }} days</span>

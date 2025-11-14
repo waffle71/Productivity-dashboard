@@ -71,6 +71,8 @@ def dashboard_view(request):
             'goal': goal,
             'progress_percentage': progress_percentage,
             'current_streak': current_streak,
+            'real_time_minutes': real_time_minutes,
+            'target_time_minutes': target_time_minutes,
         })
 
     # Get all teams the user is a member of
