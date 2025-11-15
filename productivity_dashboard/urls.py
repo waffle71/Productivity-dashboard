@@ -29,5 +29,6 @@ urlpatterns = [
     path('dashboard/', include('dashboard.urls', namespace='dashboard')),
     path('teams/', include('teams.urls', namespace='teams')),
     path('notification/<int:notification_id>/read/', user_views.mark_notification_as_read, name='notification-read'),
+    path('', include(('users.urls', 'users'), namespace='users')),
 
 ]

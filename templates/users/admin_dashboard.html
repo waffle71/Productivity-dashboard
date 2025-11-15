@@ -1,4 +1,4 @@
-{% extends "base.html"}
+{% extends "base.html" %}
 {% block content %}
 
 <h1>Admin Dashboard</h1>
@@ -13,7 +13,7 @@
     <tr>
         <td>{{ u.username }}</td>
         <td>{{ u.email }}</td>
-        <td><a href="{% url 'admin_user_detail' u.id%}">View</a></td>
+        <td><a href="{% url 'users:admin_user_detail' u.id %}">View</a></td>
     </tr>
     {% endfor %}
 </table>

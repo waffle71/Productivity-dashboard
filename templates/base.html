@@ -57,8 +57,8 @@
                             </div>
                         </div>
                         </div>
-                        {% if request.user.is_admin %}
-                            <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+                        {% if request.user.role == "ADMIN" %}
+                            <a href="{% url 'users:admin_dashboard' %}">Admin Dashboard</a>
                         {% endif %}
                         <a href="{% url 'dashboard:dashboard_view' %}" class="text-gray-700 hover:text-indigo-600">Dashboard</a>
                         <a href="{% url 'teams:team_list' %}" class="text-gray-700 hover:text-indigo-600">Teams</a>
