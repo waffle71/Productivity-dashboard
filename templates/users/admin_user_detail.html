@@ -1,12 +1,29 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>User: {{ user_obj.username}}</h2>
-<p>Email: {{ user_obj.email }}</p>
-<p>Full name: {{user_obj.first_name}} {{ user_obj.last_name }}</p>
-<p>Joined: {{ user_obj.date_joined }}</p>
+<div class="min-h-[70vh] flex items-center justify-center">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow p-8">
+    <h2 class="text-2xl font-bold text-center mb-4">User: {{ user_obj.username }}</h2>
 
+    <div class="space-y-3 text-gray-700">
+        <p><span class="font-medium">Email:</span> {{ user_obj.email }}</p>
+        <p><span class="font-medium">Full name:</span> {{ user_obj.first_name }} {{ user_obj.last_name }}</p>
+        <p><span class="font-medium">Joined:</span> {{ user_obj.date_joined }}</p>
+    </div>
 
-<a href="{% url 'users:admin_change_password' user_obj.id %}">Change Password</a>
+    <div class="mt-6 text-center">
+        <a href="{% url 'users:admin_change_password' user_obj.id %}" 
+           class="inline-block rounded-lg bg-blue-600 px-4 py-2.5 font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+           Change Password
+        </a>
+    </div>
+  </div>
+</div>
+
+<style>
+  p, span {
+      font-size: 0.95rem;
+  }
+</style>
 
 {% endblock %}
