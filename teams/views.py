@@ -527,6 +527,15 @@ def team_remove_view(request, team_id, user_id):
         messages.success(request, f"{user.username} has been removed from the team.")
         return redirect('teams:team_dashboard', team_id=team.id)
 
+@admin_required
+@require_POST
+def team_delete_team_view(request, team_id):
+    team = get_object_or_404(Team, pk=team_id)
+
+    if request.method == "POST":
+        team.delete()
+        messages.success(request, f"{team.team_name} has been deleted")
+        return redirect('teams:team_list')
 
 
 @login_required

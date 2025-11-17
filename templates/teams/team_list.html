@@ -93,6 +93,13 @@
                 Join Team
               </a>
             {% endif %}
+            {% if request.user.role == "ADMIN" %}
+               <form action="{% url 'teams:team_delete_team' team.id %}" method="POST">
+                  {% csrf_token %}
+                  <button type="submit" class="inline-flex items-center justify-center px-3 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700">
+                    Delete Team</button>
+                </form>
+            {% endif %}
           </div>
         </div>
       {% endfor %}
