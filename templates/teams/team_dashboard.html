@@ -49,6 +49,16 @@
                 Invite Member
             </a>
             {% endif %}
+
+            <form action="{% url 'teams:team_leave' team_id=team.id %}" method="POST">
+                {% csrf_token %}
+                <button type="submit" class="button button-secondary-danger flex flex-col items-center justify-center">
+                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1m0-10V5"></path>
+                 </svg>
+                 Leave Team
+                 </button>
+</form>
         </div>
     </div>
 

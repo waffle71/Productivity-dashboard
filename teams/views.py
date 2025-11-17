@@ -539,6 +539,24 @@ def team_delete_team_view(request, team_id):
 
 
 @login_required
+def team_leave_view(request, team_id):
+    team = get_object_or_404(Team, pk=team_id)
+    user = request.user
+
+    #ensure user is apart of the team
+    membership = TeamMember.objects.filter(user=user, team=team)
+
+    if not membership:
+        messages.error(request, f"{user.username} is not apart of the team")
+        return redirect('teams:team_dashboard', team_id=team.id)
+    
+    if request.method == "POST":
+        membership.delete()
+        messages.success(request, f"You are not longer apart of {team.team_name}")
+        return redirect('teams:team_list')
+
+
+@login_required
 def team_time_log_create_view(request, team_id, goal_id):
     """
     Handles logging time for a specific team goal.
