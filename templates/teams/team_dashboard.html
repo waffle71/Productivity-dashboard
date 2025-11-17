@@ -121,6 +121,11 @@
                     <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">
                         Role: {{ member.get_role_display }}
                     </span>
+                    {% if current_user_role == 'ADMIN' %}
+                    <form action="{% url 'teams:team_remove' team.id member.user.id %}" method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <button class="btn btn-danger btn-sm">Remove</button>
+                    </form>{% endif %}
                 </li>
             {% empty %}
                 <li class="text-gray-500">This team has no members.</li>

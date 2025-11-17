@@ -499,6 +499,36 @@ def team_join_view(request, team_id):
         messages.error(request, f"Failed to join team: {e}")
         return redirect('teams:team_list')
     
+
+@admin_required
+def team_remove_view(request, team_id, user_id):
+    """""
+    handles removing a user from a specific team by an admin.
+    """
+    team = get_object_or_404(Team, pk=team_id)
+    user = get_object_or_404(CustomUser, pk=user_id)
+    
+    #check to ensure user is a member
+    membership = TeamMember.objects.filter(user=user, team=team).first()
+    if not membership:
+        messages.error(request, "This user is not a member of the team.")
+        return redirect('teams:team_dashboard', team_id=team.id)
+    #prevent removing yourself from the team
+    if user == request.user:
+        messages.error(request, "You cannot remove yourself from the team.")
+        return redirect('teams:team_dashboard', team_id=team.id)
+    #prevent removing other admins from the team
+    if membership.role == TeamMember.Role.ADMIN:
+        messages.error(request, "you cannot remove an admin from a team.")
+        return redirect('teams:team_dashboard', team_id=team.id)
+    
+    if request.method == "POST":
+        membership.delete()
+        messages.success(request, f"{user.username} has been removed from the team.")
+        return redirect('teams:team_dashboard', team_id=team.id)
+
+
+
 @login_required
 def team_time_log_create_view(request, team_id, goal_id):
     """

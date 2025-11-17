@@ -36,6 +36,6 @@ urlpatterns = [
     path('team/<int:team_id>/goals/', views.team_member_tasks_view, name='team_member_tasks'), 
     path('list/', views.team_list_view, name='team_list'),        # New: To show all joinable teams
     path('join/<int:team_id>/', views.team_join_view, name='team_join'), # New: To process joining
-        
+    path('remove/<int:team_id>/<int:user_id>/', views.team_remove_view, name='team_remove'), #to process removing a user 
 
 ]
